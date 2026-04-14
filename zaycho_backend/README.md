@@ -1,6 +1,6 @@
 # ZayCho Backend
 
-This project is a small FastAPI backend for the ZayCho app, and it now serves a lightweight frontend too.
+This directory contains the FastAPI app, static frontend files, and deployment-ready backend entrypoint for ZayCho.
 
 ## Requirements
 
@@ -35,6 +35,11 @@ The homepage shows:
 
 - the product menu from `GET /menu`
 - a simple assistant form connected to `POST /agent`
+- search, category filters, and quick prompt actions
+
+## Deployment note
+
+The server reads the `PORT` environment variable automatically. That means the same app can run locally and on services like Render without changing the code.
 
 ## Available endpoints
 
