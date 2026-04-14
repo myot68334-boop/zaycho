@@ -1,6 +1,6 @@
 # ZayCho Backend
 
-This project is a small FastAPI backend for the ZayCho app.
+This project is a small FastAPI backend for the ZayCho app, and it now serves a lightweight frontend too.
 
 ## Requirements
 
@@ -24,6 +24,17 @@ When the server is running, open:
 
 - `http://127.0.0.1:8080/docs`
 - `http://127.0.0.1:8080/redoc`
+
+## Frontend
+
+When the server is running, open:
+
+- `http://127.0.0.1:8080/`
+
+The homepage shows:
+
+- the product menu from `GET /menu`
+- a simple assistant form connected to `POST /agent`
 
 ## Available endpoints
 
@@ -51,7 +62,7 @@ Sample response:
 
 ## Frontend connection example
 
-You can connect a frontend with a simple fetch call:
+The included frontend uses a simple fetch call like this:
 
 ```html
 <script>

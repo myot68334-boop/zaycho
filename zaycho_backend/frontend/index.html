@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZayCho Shop</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">ZayCho Showcase</p>
+          <h1>Browse the menu and chat with the assistant in one place.</h1>
+          <p class="hero-text">
+            This lightweight frontend is served directly from FastAPI and calls
+            the live backend APIs.
+          </p>
+          <div class="hero-actions">
+            <a href="#menu-section" class="primary-link">View menu</a>
+            <a href="#assistant-section" class="secondary-link">Ask assistant</a>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <p class="panel-label">API status</p>
+          <p id="status-badge" class="status-badge">Checking connection...</p>
+          <p class="panel-note">Backend URL: <code>http://127.0.0.1:8080</code></p>
+        </div>
+      </header>
+
+      <main class="content-grid">
+        <section id="menu-section" class="card-section">
+          <div class="section-heading">
+            <p class="section-label">Menu</p>
+            <h2>Featured products</h2>
+          </div>
+          <div id="menu-grid" class="menu-grid"></div>
+        </section>
+
+        <section id="assistant-section" class="card-section assistant-section">
+          <div class="section-heading">
+            <p class="section-label">Assistant</p>
+            <h2>Send a prompt to the backend</h2>
+          </div>
+
+          <form id="assistant-form" class="assistant-form">
+            <label for="prompt">Prompt</label>
+            <textarea
+              id="prompt"
+              name="prompt"
+              rows="4"
+              placeholder="Ask something..."
+            ></textarea>
+            <button type="submit">Send request</button>
+          </form>
+
+          <div class="response-box">
+            <p class="response-label">Response</p>
+            <pre id="assistant-response">Waiting for your message...</pre>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="menu-card-template">
+      <article class="menu-card">
+        <img class="menu-image" alt="" />
+        <div class="menu-body">
+          <div class="menu-topline">
+            <span class="menu-category"></span>
+            <span class="menu-price"></span>
+          </div>
+          <h3 class="menu-name"></h3>
+          <p class="menu-description"></p>
+        </div>
+      </article>
+    </template>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

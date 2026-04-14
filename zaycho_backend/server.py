@@ -1,9 +1,15 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 app = FastAPI()
+BASE_DIR = Path(__file__).resolve().parent
+FRONTEND_DIR = BASE_DIR / "frontend"
 
 app.add_middleware(
     CORSMiddleware,
@@ -11,6 +17,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+
+@app.get("/")
+async def home():
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 @app.get("/menu")
 async def get_menu():
