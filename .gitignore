@@ -1,0 +1,12 @@
+.DS_Store
+.idea/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+zaycho_backend/test_env/
+zaycho_backend/.venv/
+zaycho_backend/venv/
+
+zaycho_backend/zaycho.db
