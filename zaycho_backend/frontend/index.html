@@ -25,16 +25,6 @@
           <p class="panel-label">API status</p>
           <p id="status-badge" class="status-badge">Checking connection...</p>
           <p class="panel-note">Backend URL: <code>http://127.0.0.1:8080</code></p>
-          <dl class="hero-stats">
-            <div>
-              <dt>Items</dt>
-              <dd id="menu-count">0</dd>
-            </div>
-            <div>
-              <dt>Categories</dt>
-              <dd id="category-count">0</dd>
-            </div>
-          </dl>
         </div>
       </header>
 
@@ -43,22 +33,6 @@
           <div class="section-heading">
             <p class="section-label">Menu</p>
             <h2>Featured products</h2>
-          </div>
-          <div class="menu-toolbar">
-            <label class="search-field" for="menu-search">
-              <span>Search</span>
-              <input
-                id="menu-search"
-                type="search"
-                placeholder="Search products or categories"
-              />
-            </label>
-            <div class="toolbar-actions">
-              <div id="category-filters" class="category-filters"></div>
-              <button id="refresh-menu" type="button" class="ghost-button">
-                Refresh menu
-              </button>
-            </div>
           </div>
           <div id="menu-grid" class="menu-grid"></div>
         </section>
@@ -69,18 +43,6 @@
             <h2>Send a prompt to the backend</h2>
           </div>
 
-          <div class="quick-prompts">
-            <button type="button" class="prompt-chip" data-prompt="Show me the newest items.">
-              Newest items
-            </button>
-            <button type="button" class="prompt-chip" data-prompt="What products are good for gifts?">
-              Gift ideas
-            </button>
-            <button type="button" class="prompt-chip" data-prompt="Recommend something under 40000 MMK.">
-              Under 40000 MMK
-            </button>
-          </div>
-
           <form id="assistant-form" class="assistant-form">
             <label for="prompt">Prompt</label>
             <textarea
@@ -89,12 +51,7 @@
               rows="4"
               placeholder="Ask something..."
             ></textarea>
-            <div class="assistant-actions">
-              <button type="submit">Send request</button>
-              <button id="clear-response" type="button" class="ghost-button">
-                Clear
-              </button>
-            </div>
+            <button type="submit">Send request</button>
           </form>
 
           <div class="response-box">

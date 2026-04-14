@@ -143,34 +143,6 @@ button:hover {
   border: 1px solid rgba(200, 90, 50, 0.12);
 }
 
-.hero-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin: 22px 0 0;
-}
-
-.hero-stats div {
-  padding: 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(30, 26, 23, 0.06);
-}
-
-.hero-stats dt {
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.hero-stats dd {
-  margin: 6px 0 0;
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--accent-dark);
-}
-
 .status-badge {
   display: inline-flex;
   margin: 0;
@@ -195,45 +167,6 @@ button:hover {
 
 .section-heading {
   margin-bottom: 22px;
-}
-
-.menu-toolbar {
-  display: grid;
-  gap: 14px;
-  margin-bottom: 18px;
-}
-
-.search-field {
-  display: grid;
-  gap: 8px;
-  color: var(--muted);
-}
-
-.search-field span {
-  font-size: 0.92rem;
-}
-
-.search-field input {
-  min-height: 48px;
-  padding: 0 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(30, 26, 23, 0.12);
-  background: rgba(255, 255, 255, 0.78);
-  font: inherit;
-}
-
-.search-field input:focus {
-  outline: 2px solid rgba(200, 90, 50, 0.24);
-  border-color: rgba(200, 90, 50, 0.2);
-}
-
-.toolbar-actions,
-.category-filters,
-.quick-prompts,
-.assistant-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .menu-grid {
@@ -288,39 +221,6 @@ button:hover {
   gap: 12px;
 }
 
-.prompt-chip,
-.ghost-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(30, 26, 23, 0.12);
-  background: rgba(255, 255, 255, 0.56);
-  color: var(--text);
-  cursor: pointer;
-  transition: transform 180ms ease, background 180ms ease;
-}
-
-.prompt-chip:hover,
-.ghost-button:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.92);
-}
-
-.filter-pill {
-  border: 1px solid rgba(30, 26, 23, 0.12);
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--text);
-}
-
-.filter-pill.is-active {
-  background: var(--accent-dark);
-  color: #fff8f0;
-  border-color: transparent;
-}
-
 textarea {
   width: 100%;
   resize: vertical;
@@ -354,12 +254,6 @@ textarea:focus {
   color: var(--muted);
 }
 
-.menu-grid.is-loading::before {
-  content: "Loading menu...";
-  display: block;
-  color: var(--muted);
-}
-
 @keyframes rise {
   from {
     opacity: 0;
@@ -379,11 +273,6 @@ textarea:focus {
 
   .hero h1 {
     max-width: 12ch;
-  }
-
-  .toolbar-actions {
-    flex-direction: column;
-    align-items: stretch;
   }
 }
 
