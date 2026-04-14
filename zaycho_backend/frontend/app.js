@@ -1,9 +1,12 @@
 const menuGrid = document.getElementById("menu-grid");
 const template = document.getElementById("menu-card-template");
 const statusBadge = document.getElementById("status-badge");
+const backendUrl = document.getElementById("backend-url");
 const assistantForm = document.getElementById("assistant-form");
 const promptInput = document.getElementById("prompt");
 const assistantResponse = document.getElementById("assistant-response");
+
+backendUrl.textContent = window.location.origin;
 
 function formatPrice(price) {
   return new Intl.NumberFormat("en-US", {
