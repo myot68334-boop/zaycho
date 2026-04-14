@@ -35,6 +35,7 @@ The homepage shows:
 
 - the product menu from `GET /menu`
 - a simple assistant form connected to `POST /agent`
+- category filters, search, and quick assistant prompts
 
 ## Available endpoints
 
