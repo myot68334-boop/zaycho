@@ -33,6 +33,8 @@ xcodebuild \
 
 ### 4. Export archive after creating an ExportOptions plist
 
+Use the included file at [`mobile/ios/ExportOptions.plist`](/Users/myothant/Documents/New%20project/mobile/ios/ExportOptions.plist) after replacing `YOUR_TEAM_ID`.
+
 ```bash
 xcodebuild \
   -exportArchive \
@@ -52,7 +54,9 @@ keytool -genkeypair \
   -alias "zaycho-release" \
   -keyalg RSA \
   -keysize 2048 \
-  -validity 10000
+  -validity 10000 \
+  -storetype JKS \
+  -dname "CN=ZayCho, OU=Mobile, O=ZayCho, L=Tokyo, ST=Tokyo, C=JP"
 ```
 
 ### 2. Copy and edit the keystore config

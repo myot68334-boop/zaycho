@@ -67,6 +67,7 @@ curl http://127.0.0.1:8080/healthz
 - Store release notes: [`docs/store`](/Users/myothant/Documents/New%20project/docs/store)
 - Submission commands: [`docs/store/submission-command-cheatsheet.md`](/Users/myothant/Documents/New%20project/docs/store/submission-command-cheatsheet.md)
 - Exact form text: [`docs/store/store-form-exact-text.md`](/Users/myothant/Documents/New%20project/docs/store/store-form-exact-text.md)
+- iOS export plist: [`mobile/ios/ExportOptions.plist`](/Users/myothant/Documents/New%20project/mobile/ios/ExportOptions.plist)
 
 ## Deployment
 

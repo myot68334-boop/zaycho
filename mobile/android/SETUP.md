@@ -35,7 +35,9 @@ keytool -genkeypair \
   -alias "zaycho-release" \
   -keyalg RSA \
   -keysize 2048 \
-  -validity 10000
+  -validity 10000 \
+  -storetype JKS \
+  -dname "CN=ZayCho, OU=Mobile, O=ZayCho, L=Tokyo, ST=Tokyo, C=JP"
 ```
 
 ## Build

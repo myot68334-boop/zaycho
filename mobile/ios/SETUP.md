@@ -36,6 +36,20 @@ xcodebuild \
   archive
 ```
 
+## Export IPA command
+
+1. Open [`ExportOptions.plist`](/Users/myothant/Documents/New%20project/mobile/ios/ExportOptions.plist)
+2. Replace `YOUR_TEAM_ID` with your Apple Developer Team ID
+3. Run:
+
+```bash
+xcodebuild \
+  -exportArchive \
+  -archivePath "/Users/myothant/Documents/New project/mobile/ios/build/ZayCho.xcarchive" \
+  -exportOptionsPlist "/Users/myothant/Documents/New project/mobile/ios/ExportOptions.plist" \
+  -exportPath "/Users/myothant/Documents/New project/mobile/ios/build/export"
+```
+
 ## Notes
 
 - Apple submission still requires a paid Apple Developer account.
