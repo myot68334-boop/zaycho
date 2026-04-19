@@ -65,6 +65,8 @@ curl http://127.0.0.1:8080/healthz
 - iOS wrapper scaffold: [`mobile/ios`](/Users/myothant/Documents/New%20project/mobile/ios)
 - Android wrapper scaffold: [`mobile/android`](/Users/myothant/Documents/New%20project/mobile/android)
 - Store release notes: [`docs/store`](/Users/myothant/Documents/New%20project/docs/store)
+- Submission commands: [`docs/store/submission-command-cheatsheet.md`](/Users/myothant/Documents/New%20project/docs/store/submission-command-cheatsheet.md)
+- Exact form text: [`docs/store/store-form-exact-text.md`](/Users/myothant/Documents/New%20project/docs/store/store-form-exact-text.md)
 
 ## Deployment
 

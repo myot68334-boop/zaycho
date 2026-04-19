@@ -41,3 +41,7 @@ https://zaycho.onrender.com
 ## Privacy Policy URL
 
 https://zaycho.onrender.com/privacy
+
+## Review Notes
+
+ZayCho is a storefront app for browsing Myanmar grocery products, saving wishlist items, and preparing cart selections. The current release does not require account login.

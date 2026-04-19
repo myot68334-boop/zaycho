@@ -26,9 +26,28 @@ You can also provide the same values through environment variables:
 - `ZAYCHO_KEY_ALIAS`
 - `ZAYCHO_KEY_PASSWORD`
 
+Generate a release keystore:
+
+```bash
+keytool -genkeypair \
+  -v \
+  -keystore "/Users/myothant/Documents/New project/mobile/android/release-keystore.jks" \
+  -alias "zaycho-release" \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000
+```
+
 ## Build
 
 Open the Android project in Android Studio and build a signed release App Bundle.
+
+If Gradle wrapper is available:
+
+```bash
+cd "/Users/myothant/Documents/New project/mobile/android"
+./gradlew bundleRelease
+```
 
 Recommended output:
 

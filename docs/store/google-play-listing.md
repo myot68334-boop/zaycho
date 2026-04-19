@@ -29,3 +29,7 @@ https://zaycho.onrender.com/support
 ## Privacy Policy URL
 
 https://zaycho.onrender.com/privacy
+
+## Contact Email
+
+myot68334@gmail.com

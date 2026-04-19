@@ -24,6 +24,18 @@ xcodegen generate
    - let Xcode manage provisioning
 7. Archive and upload through Organizer
 
+## Terminal archive command
+
+```bash
+xcodebuild \
+  -project "/Users/myothant/Documents/New project/mobile/ios/ZayCho.xcodeproj" \
+  -scheme "ZayCho" \
+  -configuration Release \
+  -destination "generic/platform=iOS" \
+  -archivePath "/Users/myothant/Documents/New project/mobile/ios/build/ZayCho.xcarchive" \
+  archive
+```
+
 ## Notes
 
 - Apple submission still requires a paid Apple Developer account.
