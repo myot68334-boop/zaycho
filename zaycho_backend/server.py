@@ -37,6 +37,16 @@ async def home():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
+@app.get("/privacy")
+async def privacy_page():
+    return FileResponse(FRONTEND_DIR / "privacy.html")
+
+
+@app.get("/support")
+async def support_page():
+    return FileResponse(FRONTEND_DIR / "support.html")
+
+
 @app.get("/manifest.webmanifest")
 async def web_manifest():
     return FileResponse(FRONTEND_DIR / "manifest.webmanifest", media_type="application/manifest+json")

@@ -71,6 +71,8 @@ curl http://127.0.0.1:8080/healthz
 Live web deployment:
 
 - [zaycho.onrender.com](https://zaycho.onrender.com)
+- [zaycho.onrender.com/privacy](https://zaycho.onrender.com/privacy)
+- [zaycho.onrender.com/support](https://zaycho.onrender.com/support)
 
 Repository:
 

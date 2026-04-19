@@ -3,8 +3,8 @@ options:
   minimumXcodeGenVersion: 2.45.0
 settings:
   base:
-    PRODUCT_BUNDLE_IDENTIFIER: com.zaycho.app
-    DEVELOPMENT_TEAM: ""
+    PRODUCT_BUNDLE_IDENTIFIER: com.myot68334.zaycho
+    DEVELOPMENT_TEAM: YOUR_TEAM_ID
     SWIFT_VERSION: 5.0
     INFOPLIST_FILE: ZayCho/Info.plist
 targets:
