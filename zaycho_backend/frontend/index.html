@@ -3,6 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#7ea9da" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ZayCho" />
+    <meta
+      name="description"
+      content="ZayCho Myanmar grocery storefront with menu browsing, wishlist, cart, and assistant support."
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" />
     <title>ZayCho Shop</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
@@ -43,7 +53,10 @@
               <small>Japan Myanmar Grocery Edit</small>
             </div>
           </button>
-          <button class="utility-button" id="wishlist-button" aria-label="Wishlist">♡</button>
+          <div class="brand-actions">
+            <button class="utility-button utility-button-hidden" id="install-button" aria-label="Install app">⇩</button>
+            <button class="utility-button" id="wishlist-button" aria-label="Wishlist">♡</button>
+          </div>
         </div>
 
         <nav class="trend-tabs" id="trend-tabs">
@@ -173,6 +186,15 @@
                 <p class="response-label">Response</p>
                 <pre id="assistant-response">Waiting for your message...</pre>
               </div>
+              <div class="install-banner" id="install-banner">
+                <div>
+                  <strong>App အဖြစ် install လုပ်နိုင်ပါတယ်</strong>
+                  <p>iPhone/Android home screen ပေါ်တင်ပြီး app လိုသုံးနိုင်ပါတယ်။</p>
+                </div>
+                <button type="button" class="secondary-action install-now" id="install-now">
+                  Install
+                </button>
+              </div>
             </div>
           </section>
         </section>
@@ -256,14 +278,7 @@
               <p>Order update နဲ့ promotion messages တွေ ဒီနေရာမှာပြပါမယ်။</p>
             </div>
             <div class="stack-list">
-              <article class="message-card">
-                <strong>Welcome to ZayCho</strong>
-                <p>အသစ်ရောက် user များအတွက် coupon နဲ့ free shipping promo ရှိပါတယ်။</p>
-              </article>
-              <article class="message-card">
-                <strong>Need help?</strong>
-                <p>Assistant section မှာ မေးမြန်းပြီး ပစ္စည်းရှာနိုင်ပါတယ်။</p>
-              </article>
+              <div id="messages-list"></div>
             </div>
           </div>
         </section>
@@ -275,22 +290,22 @@
               <p>Order status, saved items, နဲ့ member benefits တွေကို ဒီနေရာမှာ စုပေးထားပါတယ်။</p>
             </div>
             <div class="profile-grid">
-              <article class="profile-tile">
+              <button class="profile-tile" id="profile-orders" type="button">
                 <strong>Orders</strong>
-                <span>3 recent orders</span>
-              </article>
-              <article class="profile-tile">
+                <span>Recent checkout history</span>
+              </button>
+              <button class="profile-tile" id="profile-coupons" type="button">
                 <strong>Coupons</strong>
                 <span>¥5000 member credit</span>
-              </article>
-              <article class="profile-tile">
+              </button>
+              <button class="profile-tile" id="profile-address" type="button">
                 <strong>Address</strong>
                 <span>Tokyo delivery zone</span>
-              </article>
-              <article class="profile-tile">
+              </button>
+              <button class="profile-tile" id="profile-support" type="button">
                 <strong>Support</strong>
                 <span>Message us anytime</span>
-              </article>
+              </button>
             </div>
           </div>
         </section>
@@ -300,7 +315,7 @@
     <div class="sticky-buybar">
       <button class="mini-icon" id="mini-wishlist" aria-label="Wishlist">♡</button>
       <button class="mini-icon" id="mini-share" aria-label="Share">⇪</button>
-      <button class="buy-action" id="buy-action">9% 할인 | Buying cart ထဲထည့်မယ်</button>
+      <button class="buy-action" id="buy-action">9% off | Cart ထဲထည့်မယ်</button>
     </div>
 
     <nav class="bottom-nav" id="bottom-nav">

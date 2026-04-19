@@ -1,60 +1,77 @@
 # ZayCho
 
-ZayCho is a small FastAPI storefront app that serves both an API and a lightweight frontend from the same project.
+ZayCho is a Myanmar grocery storefront built on FastAPI with a mobile-first frontend, PWA support, and native iOS/Android wrapper scaffolds for store packaging.
 
-## Live project overview
+## What is included
 
-- FastAPI backend for product and assistant endpoints
-- Built-in frontend served from FastAPI static files
-- Search, category filters, quick prompts, and a simple assistant panel
-- Ready for GitHub and simple cloud deployment
+- FastAPI backend for menu, category, assistant, and health endpoints
+- Mobile storefront frontend served directly from FastAPI
+- Wishlist, cart, trend picks, category browsing, and assistant flows
+- PWA metadata, install prompt support, and service worker caching
+- Native mobile wrapper scaffolds under [`mobile`](/Users/myothant/Documents/New%20project/mobile)
+- Render deployment config in [`render.yaml`](/Users/myothant/Documents/New%20project/render.yaml)
 
 ## Project structure
 
 ```text
 zaycho_backend/
+  assets/
+  data/
   frontend/
     app.js
     index.html
+    manifest.webmanifest
+    service-worker.js
     styles.css
-  README.md
-  database.py
+  scripts/
   requirements.txt
   server.py
+mobile/
+  ios/
+  android/
+docs/
+  store/
 ```
 
 ## Local run
 
 ```bash
-cd "zaycho_backend"
+cd "/Users/myothant/Documents/New project/zaycho_backend"
 test_env/bin/python server.py
 ```
 
-Then open:
+Open:
 
 - `http://127.0.0.1:8080/`
 - `http://127.0.0.1:8080/docs`
+- `http://127.0.0.1:8080/healthz`
 
 ## API endpoints
 
-- `GET /menu` returns sample product data
-- `POST /agent` returns a sample assistant reply
+- `GET /menu`
+- `GET /menu/categories`
+- `POST /agent`
+- `GET /healthz`
 
-Example request:
+Example:
 
 ```bash
-curl -X POST http://127.0.0.1:8080/agent \
-  -H "Content-Type: application/json" \
-  -d '{"prompt":"hello"}'
+curl http://127.0.0.1:8080/menu
+curl http://127.0.0.1:8080/healthz
 ```
+
+## Mobile packaging
+
+- iOS wrapper scaffold: [`mobile/ios`](/Users/myothant/Documents/New%20project/mobile/ios)
+- Android wrapper scaffold: [`mobile/android`](/Users/myothant/Documents/New%20project/mobile/android)
+- Store release notes: [`docs/store`](/Users/myothant/Documents/New%20project/docs/store)
 
 ## Deployment
 
-This repo includes a [render.yaml](/Users/myothant/Documents/New%20project/render.yaml) file for a simple Render deployment.
+Live web deployment:
 
-The app reads the `PORT` environment variable automatically, so it can run on local machines and cloud platforms.
+- [zaycho.onrender.com](https://zaycho.onrender.com)
 
-## Repository
+Repository:
 
-- GitHub: [myot68334-boop/zaycho](https://github.com/myot68334-boop/zaycho)
-- App source: [zaycho_backend](/Users/myothant/Documents/New%20project/zaycho_backend)
+- [myot68334-boop/zaycho](https://github.com/myot68334-boop/zaycho)

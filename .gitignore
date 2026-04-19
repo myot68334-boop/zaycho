@@ -4,9 +4,16 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.swp
 
 zaycho_backend/test_env/
 zaycho_backend/.venv/
 zaycho_backend/venv/
 
 zaycho_backend/zaycho.db
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/app/build/
+mobile/ios/build/
+blobs/
+manifests/

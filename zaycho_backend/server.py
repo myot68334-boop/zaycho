@@ -37,6 +37,21 @@ async def home():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
+@app.get("/manifest.webmanifest")
+async def web_manifest():
+    return FileResponse(FRONTEND_DIR / "manifest.webmanifest", media_type="application/manifest+json")
+
+
+@app.get("/service-worker.js")
+async def service_worker():
+    return FileResponse(FRONTEND_DIR / "service-worker.js", media_type="application/javascript")
+
+
+@app.get("/healthz")
+async def healthcheck():
+    return {"ok": True, "menu_items": len(load_menu_items())}
+
+
 @app.get("/menu")
 async def get_menu(
     category: str = Query(None, description="Filter by category"),

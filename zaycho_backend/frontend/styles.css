@@ -159,6 +159,16 @@ a {
   margin-top: 12px;
 }
 
+.brand-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.utility-button-hidden,
+.hidden {
+  display: none !important;
+}
+
 .brand-lockup {
   flex: 1;
   display: flex;
@@ -501,9 +511,42 @@ a {
   font-weight: 800;
 }
 
+.secondary-action {
+  background: #f3f6fb;
+  color: var(--text);
+  font-weight: 700;
+}
+
 .promo-cta {
   width: 100%;
   margin-top: 10px;
+}
+
+.install-banner {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #edf5ff 0%, #ffffff 100%);
+  border: 1px solid rgba(93, 143, 201, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.install-banner strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.install-banner p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.install-now {
+  min-width: 86px;
 }
 
 .category-grid,
@@ -844,14 +887,21 @@ a {
   line-height: 1.5;
 }
 
+#messages-list {
+  display: grid;
+  gap: 10px;
+}
+
 .profile-grid {
   display: grid;
   gap: 10px;
 }
 
 .profile-tile {
+  border: none;
   display: grid;
   gap: 6px;
+  text-align: left;
 }
 
 .profile-tile span {
