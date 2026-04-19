@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="my">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,71 +7,220 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="page-shell">
-      <header class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">ZayCho Showcase</p>
-          <h1>Browse the menu and chat with the assistant in one place.</h1>
-          <p class="hero-text">
-            This lightweight frontend is served directly from FastAPI and calls
-            the live backend APIs.
-          </p>
-          <div class="hero-actions">
-            <a href="#menu-section" class="primary-link">View menu</a>
-            <a href="#assistant-section" class="secondary-link">Ask assistant</a>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="status-row">
+          <span class="status-time">ZAYCHO</span>
+          <div class="status-icons">
+            <span>4G</span>
+            <span>•••</span>
           </div>
         </div>
-        <div class="hero-panel">
-          <p class="panel-label">API status</p>
-          <p id="status-badge" class="status-badge">Checking connection...</p>
-          <p class="panel-note">Backend URL: <code id="backend-url">Loading...</code></p>
+
+        <div class="search-strip">
+          <button class="utility-button" aria-label="Messages">✉</button>
+          <div class="search-panel">
+            <span class="search-lead">မြန်မာစားစရာ 🌶</span>
+            <input id="search-input" placeholder="ပစ္စည်းရှာရန်..." />
+            <button type="button" class="camera-button" aria-label="Scan">📷</button>
+            <button type="button" class="search-go" aria-label="Search">⌕</button>
+          </div>
+          <button class="utility-button cart-button" aria-label="Cart">
+            <span class="cart-glyph">🛒</span>
+            <span class="cart-badge">3</span>
+          </button>
         </div>
+
+        <div class="brand-ribbon">
+          <img
+            class="brand-logo"
+            src="/assets/images/zaycho_logo.png"
+            alt="ZayCho logo"
+          />
+          <div class="brand-copy">
+            <strong>ZAYCHO</strong>
+            <small>Japan Myanmar Grocery Edit</small>
+          </div>
+          <button class="utility-button" aria-label="Wishlist">♡</button>
+        </div>
+
+        <nav class="trend-tabs">
+          <button class="trend-tab active">အားလုံး</button>
+          <button class="trend-tab">လက်ဖက်</button>
+          <button class="trend-tab">ဟင်းအနှစ်</button>
+          <button class="trend-tab">အသင့်စား</button>
+          <button class="trend-tab">ကော်ဖီ</button>
+        </nav>
       </header>
 
-      <main class="content-grid">
-        <section id="menu-section" class="card-section">
-          <div class="section-heading">
-            <p class="section-label">Menu</p>
+      <section class="feature-stage">
+        <div class="feature-grid">
+          <article class="feature-tile mini">
+            <img src="/assets/images/tea_eaves_Assorted/0001.png" alt="Tea leaves" />
+            <div class="tile-caption">
+              <span>1.</span>
+              <small>လက်ဖက်</small>
+            </div>
+          </article>
+          <article class="feature-tile mini">
+            <img src="/assets/images/canned_foods/0019.png" alt="Canned food" />
+            <div class="tile-caption">
+              <span>2.</span>
+              <small>အသင့်စား</small>
+            </div>
+          </article>
+          <article class="feature-tile hero">
+            <div class="hero-copy">
+              <span class="hero-label">Spring Grocery Drop</span>
+              <h1>မြန်မာ့အရသာများကို<br />လက်တစ်ကမ်းနဲ့ ရွေးပါ</h1>
+              <p>အရမ်းဝယ်ဖြစ်တဲ့ လက်ဖက်၊ ဟင်းအနှစ်နဲ့ ready-to-eat items တွေကို ဒီတစ်ပတ်အတွက်စုပေးထားပါတယ်။</p>
+            </div>
+            <img src="/assets/images/zaycho_logo.png" alt="ZayCho" class="hero-mark" />
+          </article>
+          <article class="feature-tile mini">
+            <img src="/assets/images/coffee_Tea/0042.png" alt="Tea mix" />
+            <div class="tile-caption">
+              <span>3.</span>
+              <small>Tea mix</small>
+            </div>
+          </article>
+          <article class="feature-tile mini">
+            <img src="/assets/images/curry_paste_powder_Spices/0015.png" alt="Spices" />
+            <div class="tile-caption">
+              <span>4.</span>
+              <small>Hot pot</small>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="promo-section">
+        <div class="section-header compact">
+          <strong>အသစ်ရောက် ပစ္စည်းများ</strong>
+          <a href="#menu-section">အားလုံးကြည့်ရန်</a>
+        </div>
+        <div class="promo-board">
+          <div class="promo-pill user-only">အသစ်ဝင် User များအတွက်</div>
+          <div class="promo-cards">
+            <article class="promo-card sale">
+              <span class="promo-tag">-25%</span>
+              <img src="/assets/images/tea_eaves_Assorted/0002.png" alt="Promo item" />
+              <strong>လက်ဖက် Set</strong>
+              <small>¥950</small>
+            </article>
+            <article class="promo-card shipping">
+              <span class="promo-tag">Free</span>
+              <strong>ပို့ခအခမဲ့</strong>
+              <p>Tokyo အတွင်း order များအတွက်</p>
+            </article>
+            <article class="promo-card coupon">
+              <span class="promo-tag">ကူပွန်</span>
+              <strong>¥5000</strong>
+              <p>member credit</p>
+            </article>
+          </div>
+          <button class="promo-cta">အခုဝယ်ယူမည်</button>
+        </div>
+      </section>
+
+      <section class="category-section">
+        <div class="section-header compact">
+          <strong>Categories</strong>
+          <a href="#menu-section">Shop all</a>
+        </div>
+        <div id="category-strip" class="category-grid"></div>
+      </section>
+
+      <section id="menu-section" class="product-section">
+        <div class="section-header">
+          <div>
+            <span class="section-label">Recommended</span>
             <h2>Featured products</h2>
           </div>
-          <div id="menu-grid" class="menu-grid"></div>
-        </section>
+        </div>
+        <div class="recommend-tabs">
+          <button class="recommend-tab active">အကြိုက်ဆုံး</button>
+          <button class="recommend-tab">အသစ်ဝင်</button>
+          <button class="recommend-tab">SALE</button>
+          <button class="recommend-tab">Best Seller</button>
+        </div>
+        <div id="menu-grid" class="product-grid"></div>
+      </section>
 
-        <section id="assistant-section" class="card-section assistant-section">
-          <div class="section-heading">
-            <p class="section-label">Assistant</p>
-            <h2>Send a prompt to the backend</h2>
+      <section id="assistant-section" class="assistant-section">
+        <div class="assistant-card">
+          <div class="assistant-heading">
+            <div>
+              <span class="section-label">Assistant</span>
+              <h2>ဘာရှာနေသလဲ?</h2>
+            </div>
+            <span class="assistant-badge">Live</span>
           </div>
-
           <form id="assistant-form" class="assistant-form">
-            <label for="prompt">Prompt</label>
             <textarea
               id="prompt"
               name="prompt"
               rows="4"
-              placeholder="Ask something..."
+              placeholder="ဥပမာ - လက်ဖက်နဲ့ လိုက်ဖက်မယ့် အကြော်စုံပြပါ"
             ></textarea>
-            <button type="submit">Send request</button>
+            <button type="submit">မေးမယ်</button>
           </form>
-
           <div class="response-box">
             <p class="response-label">Response</p>
             <pre id="assistant-response">Waiting for your message...</pre>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
     </div>
 
+    <div class="sticky-buybar">
+      <button class="mini-icon" aria-label="Wishlist">♡</button>
+      <button class="mini-icon" aria-label="Share">⇪</button>
+      <button class="buy-action">9% 할인 | Buying cart ထဲထည့်မယ်</button>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-item active">
+        <span>⌂</span>
+        <small>Home</small>
+      </button>
+      <button class="nav-item">
+        <span>◫</span>
+        <small>Category</small>
+      </button>
+      <button class="nav-item">
+        <span>↗</span>
+        <small>Trend</small>
+      </button>
+      <button class="nav-item">
+        <span>🛒</span>
+        <small>Cart</small>
+      </button>
+      <button class="nav-item">
+        <span>◎</span>
+        <small>Me</small>
+      </button>
+    </nav>
+
     <template id="menu-card-template">
-      <article class="menu-card">
-        <img class="menu-image" alt="" />
-        <div class="menu-body">
-          <div class="menu-topline">
-            <span class="menu-category"></span>
-            <span class="menu-price"></span>
+      <article class="product-card">
+        <div class="product-image-wrap">
+          <img class="product-image" alt="" />
+          <span class="product-badge"></span>
+          <button class="product-cart" aria-label="Add to cart">🛒</button>
+        </div>
+        <div class="product-card-body">
+          <span class="product-category"></span>
+          <h3 class="product-name"></h3>
+          <div class="price-row">
+            <span class="product-price"></span>
+            <span class="product-old-price"></span>
           </div>
-          <h3 class="menu-name"></h3>
-          <p class="menu-description"></p>
+          <p class="product-description"></p>
+          <div class="product-meta">
+            <span class="product-rating">★ 4.9</span>
+            <span class="product-sold">6.9k+ sold</span>
+          </div>
         </div>
       </article>
     </template>
