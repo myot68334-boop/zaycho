@@ -47,6 +47,8 @@ const telegramWebhookUrl = document.getElementById("telegram-webhook-url");
 const telegramSetupButton = document.getElementById("telegram-setup-button");
 const telegramStatus = document.getElementById("telegram-status");
 const telegramOpenBot = document.getElementById("telegram-open-bot");
+const telegramTestMessage = document.getElementById("telegram-test-message");
+const telegramTestButton = document.getElementById("telegram-test-button");
 
 const productForm = document.getElementById("product-form");
 const productStatus = document.getElementById("product-status");
@@ -81,6 +83,7 @@ const state = {
     telegram_enabled: false,
     telegram_bot_username: "",
     telegram_webhook_url: "",
+    telegram_last_chat_id: "",
   },
   stripe: null,
   elements: null,
@@ -167,6 +170,7 @@ function updateAuthUi() {
 
   adminPanel.classList.toggle("hidden", state.user?.role !== "admin");
   telegramSetupButton.disabled = state.user?.role !== "admin";
+  telegramTestButton.disabled = state.user?.role !== "admin";
 }
 
 function renderCategories() {
@@ -416,12 +420,14 @@ async function loadConfig() {
 function renderTelegramConfig() {
   const username = state.config.telegram_bot_username?.trim();
   const webhookUrl = state.config.telegram_webhook_url?.trim();
+  const lastChatId = state.config.telegram_last_chat_id?.trim();
 
   if (!state.config.telegram_enabled) {
     telegramAdminSummary.textContent = "Telegram bot token is not configured yet. Add TELEGRAM_BOT_TOKEN in the server env first.";
     telegramWebhookUrl.textContent = "Webhook URL will appear after PUBLIC_BASE_URL and bot token are configured.";
     telegramOpenBot.classList.add("hidden");
     telegramOpenBot.href = "#";
+    telegramTestMessage.placeholder = "Configure Telegram first.";
     return;
   }
 
@@ -429,8 +435,11 @@ function renderTelegramConfig() {
     ? `Bot is configured as @${username}. Use the button below to register the webhook with Telegram.`
     : "Telegram bot token is configured. Add TELEGRAM_BOT_USERNAME if you want the bot link shown here.";
   telegramWebhookUrl.textContent = webhookUrl
-    ? `Webhook URL: ${webhookUrl}`
+    ? `Webhook URL: ${webhookUrl}${lastChatId ? ` | Last chat: ${lastChatId}` : ""}`
     : "Set PUBLIC_BASE_URL to your live HTTPS site before running webhook setup.";
+  telegramTestMessage.placeholder = lastChatId
+    ? "Send a test message to the latest Telegram chat..."
+    : "Message the bot once, then send a test message from here.";
 
   if (username) {
     telegramOpenBot.href = `https://t.me/${username}`;
@@ -857,6 +866,28 @@ telegramSetupButton.addEventListener("click", async () => {
     telegramStatus.textContent = data.ok
       ? `Webhook connected: ${data.webhook_url}`
       : "Telegram webhook request completed, but Telegram did not confirm success.";
+  } catch (error) {
+    telegramStatus.textContent = error.message;
+  }
+});
+
+telegramTestButton.addEventListener("click", async () => {
+  const message = telegramTestMessage.value.trim();
+  if (!message) {
+    telegramStatus.textContent = "Type a Telegram test message first.";
+    return;
+  }
+
+  telegramStatus.textContent = "Sending Telegram test message...";
+  try {
+    const data = await api("/api/telegram/test-message", {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    });
+    telegramStatus.textContent = data.ok
+      ? `Telegram test message sent to chat ${data.chat_id}.`
+      : "Telegram accepted the request, but did not confirm success.";
+    telegramTestMessage.value = "";
   } catch (error) {
     telegramStatus.textContent = error.message;
   }

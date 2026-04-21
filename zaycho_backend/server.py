@@ -26,11 +26,13 @@ from database import (
     delete_product,
     delete_session,
     delete_user_account,
+    get_app_setting,
     get_user_by_token,
     init_db,
     list_categories,
     list_orders,
     list_products,
+    set_app_setting,
     update_order_tracking,
     update_product,
 )
@@ -130,6 +132,11 @@ class TelegramWebhookRequest(BaseModel):
     edited_message: dict | None = None
 
 
+class TelegramTestMessageRequest(BaseModel):
+    message: str = Field(min_length=2, max_length=400)
+    chat_id: int | None = None
+
+
 class PaymentIntentRequest(BaseModel):
     items: list[OrderItemRequest]
     currency: str = Field(default="jpy", min_length=3, max_length=3)
@@ -216,6 +223,54 @@ def telegram_enabled() -> bool:
     return bool(TELEGRAM_BOT_TOKEN)
 
 
+def assistant_reply(prompt: str) -> str:
+    normalized_prompt = prompt.lower()
+    if any(keyword in normalized_prompt for keyword in ["serum", "glow", "skincare", "skin"]):
+        return "Skincare အတွက် Dew Reset Serum, Matcha Cloud Cleanser, Midnight Repair Cream ကို routine set အဖြစ်စမ်းကြည့်လို့ကောင်းပါတယ်။"
+    if any(keyword in normalized_prompt for keyword in ["lip", "makeup", "cosmetic", "cosmetics"]):
+        return "Makeup အတွက် Velvet Bloom Lip Tint, Glow Veil Cushion SPF50, Rose Quartz Blush Duo ကို everyday look set အဖြစ်ရွေးနိုင်ပါတယ်။"
+    if any(keyword in normalized_prompt for keyword in ["shirt", "pants", "dress", "fashion", "outfit"]):
+        return "Fashion side မှာ Lunar Satin Shirt, Studio Cargo Pants, Weekend Co-ord Set တို့ကို best-selling outfit picks အဖြစ် recommend လုပ်ပါတယ်။"
+    return "Category, budget, style, skin concern တို့ထဲက တစ်ခုခုပြောပေးရင် clothing နဲ့ cosmetics items တွေထဲက recommendation ပေးနိုင်ပါတယ်။"
+
+
+TELEGRAM_LAST_CHAT_KEY = "telegram_last_chat_id"
+TELEGRAM_COMMANDS = {
+    "/help": "Commands: /start, /help, /menu, /shop",
+    "/menu": "Browse featured categories and product picks.",
+    "/shop": "Open the live ZayCho storefront.",
+}
+TELEGRAM_STOP_WORDS = {
+    "for",
+    "with",
+    "from",
+    "that",
+    "this",
+    "under",
+    "over",
+    "need",
+    "want",
+    "show",
+    "give",
+    "some",
+    "best",
+    "item",
+    "items",
+    "please",
+    "recommend",
+    "recommendation",
+    "suggest",
+    "suggestion",
+    "looking",
+}
+
+
+def storefront_url() -> str:
+    if PUBLIC_BASE_URL and PUBLIC_BASE_URL != "https://example.com":
+        return PUBLIC_BASE_URL.rstrip("/")
+    return "http://127.0.0.1:8080"
+
+
 def telegram_api_request(method: str, payload: dict) -> dict:
     if not telegram_enabled():
         raise HTTPException(status_code=501, detail="Telegram bot is not configured on the server.")
@@ -233,26 +288,151 @@ def telegram_api_request(method: str, payload: dict) -> dict:
         raise HTTPException(status_code=502, detail=f"Telegram request failed: {error}") from error
 
 
-def assistant_reply(prompt: str) -> str:
-    normalized_prompt = prompt.lower()
-    if any(keyword in normalized_prompt for keyword in ["serum", "glow", "skincare", "skin"]):
-        return "Skincare အတွက် Dew Reset Serum, Matcha Cloud Cleanser, Midnight Repair Cream ကို routine set အဖြစ်စမ်းကြည့်လို့ကောင်းပါတယ်။"
-    if any(keyword in normalized_prompt for keyword in ["lip", "makeup", "cosmetic", "cosmetics"]):
-        return "Makeup အတွက် Velvet Bloom Lip Tint, Glow Veil Cushion SPF50, Rose Quartz Blush Duo ကို everyday look set အဖြစ်ရွေးနိုင်ပါတယ်။"
-    if any(keyword in normalized_prompt for keyword in ["shirt", "pants", "dress", "fashion", "outfit"]):
-        return "Fashion side မှာ Lunar Satin Shirt, Studio Cargo Pants, Weekend Co-ord Set တို့ကို best-selling outfit picks အဖြစ် recommend လုပ်ပါတယ်။"
-    return "Category, budget, style, skin concern တို့ထဲက တစ်ခုခုပြောပေးရင် clothing နဲ့ cosmetics items တွေထဲက recommendation ပေးနိုင်ပါတယ်။"
+def send_telegram_message(chat_id: int, text: str) -> dict:
+    return telegram_api_request(
+        "sendMessage",
+        {
+            "chat_id": chat_id,
+            "text": text,
+            "disable_web_page_preview": False,
+        },
+    )
+
+
+def extract_budget(prompt: str) -> int | None:
+    lowered = prompt.lower()
+    patterns = [
+        r"under\s+(\d{3,6})",
+        r"below\s+(\d{3,6})",
+        r"budget\s+(\d{3,6})",
+        r"(\d{3,6})\s*(?:yen|jpy|kyat)",
+        r"(\d{3,6})\s*အောက်",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, lowered)
+        if match:
+            return int(match.group(1))
+    return None
+
+
+def query_tokens(prompt: str) -> list[str]:
+    return [
+        token
+        for token in re.findall(r"[a-zA-Z]{3,}", prompt.lower())
+        if token not in TELEGRAM_STOP_WORDS
+    ]
+
+
+def product_match_score(product: dict, prompt: str, budget: int | None) -> int:
+    haystack = " ".join(
+        [
+            product["name"],
+            product["category"],
+            product["description"],
+            " ".join(product["colors"]),
+            " ".join(product["sizes"]),
+            product["badge"],
+        ]
+    ).lower()
+    score = 0
+    for token in query_tokens(prompt):
+        if token in haystack:
+            score += 2
+    lowered = prompt.lower()
+    category = product["category"].lower()
+    if category in lowered:
+        score += 4
+    if budget is not None and product["price"] <= budget:
+        score += 3
+    if "skincare" in lowered and category == "skincare":
+        score += 4
+    if "makeup" in lowered and category == "makeup":
+        score += 4
+    if any(word in lowered for word in ["outfit", "fashion", "shirt", "pants", "dress"]) and category in {"tops", "bottoms", "sets"}:
+        score += 4
+    return score
+
+
+def format_product_line(product: dict) -> str:
+    return f"• {product['name']} ({product['category']}) - ¥{product['price']}"
+
+
+def recommended_products(prompt: str, limit: int = 3) -> list[dict]:
+    products = list_products()
+    budget = extract_budget(prompt)
+    scored = [
+        (product_match_score(product, prompt, budget), product)
+        for product in products
+    ]
+    scored = [item for item in scored if item[0] > 0]
+    scored.sort(key=lambda item: (item[0], item[1]["rating"], -item[1]["price"]), reverse=True)
+    return [product for _, product in scored[:limit]]
+
+
+def menu_command_reply() -> str:
+    categories = ", ".join(list_categories())
+    featured = list_products()[:4]
+    lines = "\n".join(format_product_line(product) for product in featured)
+    return (
+        "ZayCho menu overview\n\n"
+        f"Categories: {categories}\n\n"
+        "Featured picks:\n"
+        f"{lines}\n\n"
+        f"Shop: {storefront_url()}"
+    )
+
+
+def help_command_reply() -> str:
+    return (
+        "ZayCho bot commands\n\n"
+        "/start - welcome message\n"
+        "/menu - featured categories and products\n"
+        "/shop - open storefront link\n"
+        "/help - show this help\n\n"
+        "You can also send prompts like:\n"
+        "• skincare for oily skin under 5000 yen\n"
+        "• black outfit under 8000 yen"
+    )
+
+
+def shop_command_reply() -> str:
+    return f"Shop link: {storefront_url()}"
+
+
+def product_recommendation_reply(prompt: str) -> str:
+    picks = recommended_products(prompt)
+    if not picks:
+        return (
+            f"{assistant_reply(prompt)}\n\n"
+            "ပိုတိကျအောင် category, budget, style, skin concern ကို ထည့်ပေးပါ။\n"
+            f"Shop: {storefront_url()}"
+        )
+
+    budget = extract_budget(prompt)
+    intro = "အောက်က item တွေကို စမ်းကြည့်ပါ:"
+    if budget is not None:
+        intro = f"Budget ¥{budget} အောက်နဲ့ကိုက်မယ့် item တွေကို ရွေးထားပါတယ်:"
+    lines = "\n".join(format_product_line(product) for product in picks)
+    return f"{intro}\n\n{lines}\n\nပိုတိကျချင်ရင် color/style/skin concern ကို ထပ်ပြောပါ။\nShop: {storefront_url()}"
 
 
 def build_telegram_reply(prompt: str) -> str:
-    if prompt.strip().startswith("/start"):
-        base_url = PUBLIC_BASE_URL if PUBLIC_BASE_URL and PUBLIC_BASE_URL != "https://example.com" else "http://127.0.0.1:8080"
+    text = prompt.strip()
+    command = text.split()[0].lower() if text.startswith("/") else ""
+    if command == "/start":
         return (
             "မင်္ဂလာပါ၊ ZayCho Telegram bot မှ ကြိုဆိုပါတယ်။\n\n"
-            "Product recommendation လိုချင်တာ၊ skincare/fashion item မေးချင်တာတွေကို message ပို့လို့ရပါတယ်။\n"
-            f"Shop link: {base_url}"
+            "Fashion, skincare, makeup recommendation တွေကို category, budget, style, skin concern နဲ့မေးလို့ရပါတယ်။\n"
+            "Commands: /help, /menu, /shop\n"
+            f"Shop link: {storefront_url()}"
         )
-    return assistant_reply(prompt)
+    if command == "/help":
+        return help_command_reply()
+    if command == "/menu":
+        return menu_command_reply()
+    if command == "/shop":
+        return shop_command_reply()
+    return product_recommendation_reply(text)
 
 
 def compute_amount(items: list[OrderItemRequest]) -> int:
@@ -295,10 +475,12 @@ async def healthcheck() -> dict:
 @app.get("/api/config")
 async def config() -> dict:
     webhook_url = ""
+    last_chat_id = ""
     if telegram_enabled():
         base_url = PUBLIC_BASE_URL.rstrip("/")
         if base_url and base_url != "https://example.com":
             webhook_url = f"{base_url}/api/telegram/webhook/{TELEGRAM_BOT_TOKEN}"
+        last_chat_id = get_app_setting(TELEGRAM_LAST_CHAT_KEY, "")
     return {
         "stripe_enabled": stripe_enabled(),
         "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY,
@@ -306,6 +488,7 @@ async def config() -> dict:
         "telegram_enabled": telegram_enabled(),
         "telegram_bot_username": TELEGRAM_BOT_USERNAME,
         "telegram_webhook_url": webhook_url,
+        "telegram_last_chat_id": last_chat_id,
         "tracking_steps": TRACKING_STEPS,
         "default_admin_email": os.getenv("LYRA_ADMIN_EMAIL", "admin@lyrashop.com"),
     }
@@ -415,20 +598,24 @@ async def create_payment_intent(
 
 @app.post("/api/assistant")
 async def assistant(payload: AssistantRequest) -> dict:
-    return {"reply": assistant_reply(payload.prompt)}
+    return {"reply": product_recommendation_reply(payload.prompt)}
 
 
 @app.get("/api/telegram/config")
 async def telegram_config() -> dict:
     webhook_url = ""
+    last_chat_id = ""
     if telegram_enabled():
         base_url = PUBLIC_BASE_URL.rstrip("/")
         if base_url and base_url != "https://example.com":
             webhook_url = f"{base_url}/api/telegram/webhook/{TELEGRAM_BOT_TOKEN}"
+        last_chat_id = get_app_setting(TELEGRAM_LAST_CHAT_KEY, "")
     return {
         "telegram_enabled": telegram_enabled(),
         "telegram_bot_username": TELEGRAM_BOT_USERNAME,
         "webhook_url": webhook_url,
+        "last_chat_id": last_chat_id,
+        "commands": list(TELEGRAM_COMMANDS.keys()),
     }
 
 
@@ -442,6 +629,25 @@ async def telegram_set_webhook(_: Annotated[dict, Depends(admin_user)]) -> dict:
     webhook_url = f"{PUBLIC_BASE_URL.rstrip('/')}/api/telegram/webhook/{TELEGRAM_BOT_TOKEN}"
     response = telegram_api_request("setWebhook", {"url": webhook_url})
     return {"ok": response.get("ok", False), "webhook_url": webhook_url, "telegram_response": response}
+
+
+@app.post("/api/telegram/test-message")
+async def telegram_test_message(
+    payload: TelegramTestMessageRequest,
+    _: Annotated[dict, Depends(admin_user)],
+) -> dict:
+    if not telegram_enabled():
+        raise HTTPException(status_code=501, detail="Telegram bot is not configured on the server.")
+
+    chat_id = payload.chat_id
+    if chat_id is None:
+        stored_chat_id = get_app_setting(TELEGRAM_LAST_CHAT_KEY, "")
+        if not stored_chat_id:
+            raise HTTPException(status_code=400, detail="No recent Telegram chat found yet. Message the bot once, then try again.")
+        chat_id = int(stored_chat_id)
+
+    telegram_response = send_telegram_message(chat_id, payload.message.strip())
+    return {"ok": telegram_response.get("ok", False), "chat_id": chat_id}
 
 
 @app.post("/api/telegram/webhook/{token}")
@@ -459,14 +665,9 @@ async def telegram_webhook(token: str, payload: TelegramWebhookRequest) -> dict:
     if not chat_id or not text:
         return {"ok": True, "ignored": True}
 
+    set_app_setting(TELEGRAM_LAST_CHAT_KEY, str(chat_id))
     reply = build_telegram_reply(text)
-    telegram_response = telegram_api_request(
-        "sendMessage",
-        {
-            "chat_id": chat_id,
-            "text": reply,
-        },
-    )
+    telegram_response = send_telegram_message(chat_id, reply)
     return {"ok": telegram_response.get("ok", False), "reply": reply}
 
 

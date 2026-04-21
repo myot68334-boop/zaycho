@@ -341,6 +341,11 @@ def init_db() -> None:
                 FOREIGN KEY(order_id) REFERENCES orders(id),
                 FOREIGN KEY(product_id) REFERENCES products(id)
             );
+
+            CREATE TABLE IF NOT EXISTS app_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
             """
         )
 
@@ -738,4 +743,27 @@ def delete_product(product_id: int) -> None:
     connection = get_connection()
     with connection:
         connection.execute("DELETE FROM products WHERE id = ?", (product_id,))
+    connection.close()
+
+
+def get_app_setting(key: str, default: str = "") -> str:
+    connection = get_connection()
+    row = connection.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+    connection.close()
+    if not row:
+        return default
+    return row["value"]
+
+
+def set_app_setting(key: str, value: str) -> None:
+    connection = get_connection()
+    with connection:
+        connection.execute(
+            """
+            INSERT INTO app_settings (key, value)
+            VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            """,
+            (key, value),
+        )
     connection.close()
