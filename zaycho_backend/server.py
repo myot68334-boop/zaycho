@@ -37,6 +37,8 @@ from database import (
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR / "frontend"
+FRONTEND_DIR.mkdir(exist_ok=True)
+UPLOADS_DIR.mkdir(exist_ok=True)
 
 
 def load_env_file(env_path: Path) -> None:
