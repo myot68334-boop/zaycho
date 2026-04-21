@@ -1,648 +1,921 @@
-const menuGrid = document.getElementById("menu-grid");
-const template = document.getElementById("menu-card-template");
-const stackTemplate = document.getElementById("stack-item-template");
-const assistantForm = document.getElementById("assistant-form");
-const promptInput = document.getElementById("prompt");
-const assistantResponse = document.getElementById("assistant-response");
-const categoryStrip = document.getElementById("category-strip");
+const productGrid = document.getElementById("product-grid");
+const categoryList = document.getElementById("category-list");
 const searchInput = document.getElementById("search-input");
-const trendTabs = document.getElementById("trend-tabs");
-const recommendTabs = document.getElementById("recommend-tabs");
-const bottomNav = document.getElementById("bottom-nav");
+const resultSummary = document.getElementById("result-summary");
+const cartItemsEl = document.getElementById("cart-items");
 const cartCount = document.getElementById("cart-count");
-const categoriesPageGrid = document.getElementById("categories-page-grid");
-const trendGrid = document.getElementById("trend-grid");
-const cartList = document.getElementById("cart-list");
-const wishlistList = document.getElementById("wishlist-list");
 const cartSubtotal = document.getElementById("cart-subtotal");
-const detailImage = document.getElementById("detail-image");
-const detailCategory = document.getElementById("detail-category");
-const detailName = document.getElementById("detail-name");
-const detailPrice = document.getElementById("detail-price");
-const detailOldPrice = document.getElementById("detail-old-price");
-const detailSold = document.getElementById("detail-sold");
-const detailDescription = document.getElementById("detail-description");
-const backButton = document.getElementById("back-button");
-const installButton = document.getElementById("install-button");
-const installNowButton = document.getElementById("install-now");
-const installBanner = document.getElementById("install-banner");
-const messagesList = document.getElementById("messages-list");
+const cartShipping = document.getElementById("cart-shipping");
+const cartTotal = document.getElementById("cart-total");
+const checkoutPanel = document.getElementById("checkout-panel");
+const checkoutToggle = document.getElementById("checkout-toggle");
+const closeCheckout = document.getElementById("close-checkout");
+const checkoutForm = document.getElementById("checkout-form");
+const checkoutStatus = document.getElementById("checkout-status");
+const authForm = document.getElementById("auth-form");
+const authModeToggle = document.getElementById("auth-mode-toggle");
+const authSubmit = document.getElementById("auth-submit");
+const authStatus = document.getElementById("auth-status");
+const authHelper = document.getElementById("auth-helper");
+const authName = document.getElementById("auth-name");
+const authEmail = document.getElementById("auth-email");
+const authPassword = document.getElementById("auth-password");
+const authStateGuest = document.getElementById("auth-state-guest");
+const authStateUser = document.getElementById("auth-state-user");
+const accountName = document.getElementById("account-name");
+const accountEmail = document.getElementById("account-email");
+const accountRole = document.getElementById("account-role");
+const logoutButton = document.getElementById("logout-button");
+const deleteAccountButton = document.getElementById("delete-account-button");
+const ordersList = document.getElementById("orders-list");
+const assistantInput = document.getElementById("assistant-input");
+const assistantSubmit = document.getElementById("assistant-submit");
+const assistantResponse = document.getElementById("assistant-response");
+const openCartButton = document.getElementById("open-cart-button");
+const checkoutPayment = document.getElementById("checkout-payment");
+const stripePanel = document.getElementById("stripe-panel");
+const stripeNote = document.getElementById("stripe-note");
+const paymentElementContainer = document.getElementById("payment-element");
+const adminPanel = document.getElementById("admin-panel");
+const adminStats = document.getElementById("admin-stats");
+const metricProducts = document.getElementById("metric-products");
+const metricOrders = document.getElementById("metric-orders");
+const adminHint = document.getElementById("admin-hint");
+const scrollAdmin = document.getElementById("scroll-admin");
+const telegramAdminSummary = document.getElementById("telegram-admin-summary");
+const telegramWebhookUrl = document.getElementById("telegram-webhook-url");
+const telegramSetupButton = document.getElementById("telegram-setup-button");
+const telegramStatus = document.getElementById("telegram-status");
+const telegramOpenBot = document.getElementById("telegram-open-bot");
+
+const productForm = document.getElementById("product-form");
+const productStatus = document.getElementById("product-status");
+const adminProductList = document.getElementById("admin-product-list");
+const adminOrderList = document.getElementById("admin-order-list");
+const adminOrderStatus = document.getElementById("admin-order-status");
+const clearProductForm = document.getElementById("clear-product-form");
+const uploadImageButton = document.getElementById("upload-image-button");
+const productImageFile = document.getElementById("product-image-file");
 
 const STORAGE_KEYS = {
-  cart: "zaycho-cart",
-  wishlist: "zaycho-wishlist",
-  messages: "zaycho-messages",
+  cart: "lyra-cart",
+  token: "lyra-token",
 };
 
-let menuItems = [];
-let filteredItems = [];
-let cartItems = [];
-let wishlistItems = [];
-let messages = [];
-let currentView = "home";
-let currentSort = "recommended";
-let selectedProduct = null;
-let installPrompt = null;
-const viewHistory = ["home"];
+const state = {
+  mode: "login",
+  token: localStorage.getItem(STORAGE_KEYS.token) || "",
+  user: null,
+  products: [],
+  categories: [],
+  selectedCategory: "All",
+  cart: [],
+  orders: [],
+  adminProducts: [],
+  adminOrders: [],
+  config: {
+    stripe_enabled: false,
+    stripe_publishable_key: "",
+    tracking_steps: [],
+    default_admin_email: "",
+    telegram_enabled: false,
+    telegram_bot_username: "",
+    telegram_webhook_url: "",
+  },
+  stripe: null,
+  elements: null,
+  paymentElement: null,
+  activePaymentIntent: null,
+};
 
-function formatPrice(price) {
+const LOCAL_ASSISTANT_HOSTS = new Set(["localhost", "127.0.0.1"]);
+const N8N_WEBHOOK_URL = "http://localhost:5678/webhook/ollama-chat";
+
+function formatPrice(amount) {
   return new Intl.NumberFormat("ja-JP", {
     style: "currency",
     currency: "JPY",
     maximumFractionDigits: 0,
-  }).format(price);
+  }).format(amount);
 }
 
-function getDiscountLabel(id) {
-  const values = [5, 10, 12, 15, 18, 20];
-  return values[id % values.length];
+function saveCart() {
+  localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(state.cart));
 }
 
-function getCategoryIcon(category) {
-  const lower = category.toLowerCase();
-  if (lower.includes("tea") || lower.includes("လက်ဖက်")) return "🍵";
-  if (lower.includes("noodle") || lower.includes("ခေါက်ဆွဲ")) return "🍜";
-  if (lower.includes("spice") || lower.includes("အနှစ်") || lower.includes("မဆလာ")) return "🌶️";
-  if (lower.includes("fruit") || lower.includes("ယို")) return "🍍";
-  if (lower.includes("coffee")) return "☕";
-  if (lower.includes("canned")) return "🥫";
-  if (lower.includes("vegetarian")) return "🥬";
-  return "🛍️";
-}
-
-function getCategoryLabel(category) {
-  const labels = [
-    ["Tea Leaves & Assorted Beans", "လက်ဖက်"],
-    ["Monhinga & Noodles", "ခေါက်ဆွဲ"],
-    ["Preserved Fruits & Snack", "ယိုစုံ"],
-    ["Curry Paste, Oil, Powder & Spices", "ဟင်းအနှစ်"],
-    ["Canned Foods", "စည်သွပ်"],
-    ["Fish Paste, Dried Fish & Dried Prawns", "ငါးပိ/ခြောက်"],
-    ["Ready To Eat Food & Relish", "အသင့်စား"],
-    ["Pickles & Ready To Eat Leaves", "အချဉ်အရွက်"],
-    ["Salads", "အသုပ်"],
-    ["Crackers and Dried Goods", "မုန့်ခြောက်"],
-    ["Soup", "ဟင်းချို"],
-    ["Coffee & Tea", "ကော်ဖီ"],
-    ["Vegetarian", "သက်သတ်လွတ်"],
-    ["Asian Groceries", "Asian"],
-  ];
-
-  for (const [match, label] of labels) {
-    if (category.includes(match)) {
-      return label;
-    }
-  }
-
-  return category.length > 14 ? `${category.slice(0, 12)}...` : category;
-}
-
-function getSortedItems(items, sort) {
-  const copy = [...items];
-
-  if (sort === "latest") {
-    return copy.sort((a, b) => b.id - a.id);
-  }
-
-  if (sort === "sale") {
-    return copy.sort((a, b) => getDiscountLabel(b.id) - getDiscountLabel(a.id));
-  }
-
-  if (sort === "bestseller") {
-    return copy.sort((a, b) => (b.id % 9) - (a.id % 9));
-  }
-
-  return copy;
-}
-
-function updateActiveButtons(container, selector, activeValue, attribute) {
-  container.querySelectorAll(selector).forEach((button) => {
-    button.classList.toggle("active", button.getAttribute(attribute) === activeValue);
-  });
-}
-
-function persistState() {
-  localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(cartItems));
-  localStorage.setItem(STORAGE_KEYS.wishlist, JSON.stringify(wishlistItems));
-  localStorage.setItem(STORAGE_KEYS.messages, JSON.stringify(messages));
-}
-
-function hydrateState() {
+function loadCart() {
   try {
-    cartItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.cart) || "[]");
-    wishlistItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.wishlist) || "[]");
-    messages = JSON.parse(localStorage.getItem(STORAGE_KEYS.messages) || "[]");
+    state.cart = JSON.parse(localStorage.getItem(STORAGE_KEYS.cart) || "[]");
   } catch (error) {
-    cartItems = [];
-    wishlistItems = [];
-    messages = [];
-  }
-
-  if (!messages.length) {
-    messages = [
-      {
-        title: "Welcome to ZayCho",
-        body: "အသစ်ရောက် user များအတွက် coupon နဲ့ free shipping promo ရှိပါတယ်။",
-      },
-      {
-        title: "Need help?",
-        body: "Assistant section မှာ မေးမြန်းပြီး ပစ္စည်းရှာနိုင်ပါတယ်။",
-      },
-    ];
+    state.cart = [];
   }
 }
 
-function addMessage(title, body) {
-  messages.unshift({ title, body });
-  messages = messages.slice(0, 12);
-  persistState();
-  renderMessages();
+function groupedCartItems() {
+  const grouped = new Map();
+  state.cart.forEach((item) => {
+    const existing = grouped.get(item.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      grouped.set(item.id, { ...item, quantity: 1 });
+    }
+  });
+  return [...grouped.values()];
 }
 
-function renderMessages() {
-  messagesList.innerHTML = "";
-  messages.forEach((message) => {
-    const card = document.createElement("article");
-    card.className = "message-card";
-    card.innerHTML = `<strong>${message.title}</strong><p>${message.body}</p>`;
-    messagesList.appendChild(card);
+function calculateTotals() {
+  const subtotal = groupedCartItems().reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shipping = subtotal === 0 ? 0 : subtotal >= 12000 ? 0 : 800;
+  return { subtotal, shipping, total: subtotal + shipping };
+}
+
+function parseCsv(value) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function productVisual(product) {
+  if (product.image_url) {
+    return `<img src="${product.image_url}" alt="${product.name}" class="product-image" />`;
+  }
+  return `<span>${product.display_emoji}</span>`;
+}
+
+function updateAuthUi() {
+  const isRegister = state.mode === "register";
+  authSubmit.textContent = isRegister ? "Create Account" : "Login";
+  authModeToggle.textContent = isRegister ? "Switch to Login" : "Switch to Register";
+  authHelper.textContent = isRegister
+    ? "Register လုပ်ပြီးတာနဲ့ order history နဲ့ checkout ကို account နဲ့သုံးနိုင်ပါတယ်။"
+    : "အကောင့်ဝင်ပြီး checkout နဲ့ order history ကို အသုံးပြုနိုင်ပါတယ်။";
+  authName.required = isRegister;
+  authName.style.display = isRegister ? "block" : "none";
+
+  if (state.user) {
+    authStateGuest.classList.add("hidden");
+    authStateUser.classList.remove("hidden");
+    accountName.textContent = state.user.full_name;
+    accountEmail.textContent = state.user.email;
+    accountRole.textContent = `Role: ${state.user.role}`;
+  } else {
+    authStateGuest.classList.remove("hidden");
+    authStateUser.classList.add("hidden");
+  }
+
+  adminPanel.classList.toggle("hidden", state.user?.role !== "admin");
+  telegramSetupButton.disabled = state.user?.role !== "admin";
+}
+
+function renderCategories() {
+  categoryList.innerHTML = "";
+  ["All", ...state.categories].forEach((category) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = category === state.selectedCategory ? "category-button active" : "category-button";
+    button.textContent = category;
+    button.addEventListener("click", () => {
+      state.selectedCategory = category;
+      renderCategories();
+      renderProducts();
+    });
+    categoryList.appendChild(button);
   });
 }
 
-function renderCategories(items) {
-  const categories = Array.from(new Set(items.map((item) => item.category.trim())));
-  categoryStrip.innerHTML = "";
-  categoriesPageGrid.innerHTML = "";
-
-  categories.forEach((category) => {
-    const markup = `
-      <span class="category-icon">${getCategoryIcon(category)}</span>
-      <span class="category-text">${getCategoryLabel(category)}</span>
-    `;
-
-    const homeButton = document.createElement("button");
-    homeButton.type = "button";
-    homeButton.className = "category-chip";
-    homeButton.innerHTML = markup;
-    homeButton.addEventListener("click", () => {
-      searchInput.value = category;
-      filterMenu(category);
-      showView("home");
-    });
-    categoryStrip.appendChild(homeButton);
-
-    const pageButton = document.createElement("button");
-    pageButton.type = "button";
-    pageButton.className = "category-chip category-page-chip";
-    pageButton.innerHTML = markup;
-    pageButton.addEventListener("click", () => {
-      searchInput.value = category;
-      filterMenu(category);
-      showView("home");
-    });
-    categoriesPageGrid.appendChild(pageButton);
+function filteredProducts() {
+  const normalized = searchInput.value.trim().toLowerCase();
+  return state.products.filter((product) => {
+    const categoryMatch = state.selectedCategory === "All" || product.category === state.selectedCategory;
+    const searchMatch =
+      normalized === "" ||
+      product.name.toLowerCase().includes(normalized) ||
+      product.category.toLowerCase().includes(normalized) ||
+      product.description.toLowerCase().includes(normalized);
+    return categoryMatch && searchMatch;
   });
 }
 
-function updateCartCount() {
-  cartCount.textContent = String(cartItems.length);
-}
-
-function findItemById(id) {
-  return menuItems.find((item) => item.id === id);
-}
-
-function openProductDetail(item) {
-  selectedProduct = item;
-  detailImage.src = item.image_url;
-  detailImage.alt = item.name;
-  detailCategory.textContent = item.category;
-  detailName.textContent = item.name;
-  detailPrice.textContent = formatPrice(item.price);
-  detailOldPrice.textContent = formatPrice(Math.round(item.price * 1.15));
-  detailSold.textContent = `${(item.id % 9) + 1}.9k+ sold`;
-  detailDescription.textContent = item.description;
-  showView("detail");
-}
-
-function addToCart(item) {
-  cartItems.push(item);
-  updateCartCount();
+function addToCart(product) {
+  state.cart.push(product);
+  state.activePaymentIntent = null;
+  saveCart();
   renderCart();
-  persistState();
-  addMessage("Added to cart", `${item.name} ကို cart ထဲထည့်ပြီးပါပြီ။`);
 }
 
-function addToWishlist(item) {
-  if (!wishlistItems.some((wishlistItem) => wishlistItem.id === item.id)) {
-    wishlistItems.push(item);
-    addMessage("Saved to wishlist", `${item.name} ကို wishlist ထဲသိမ်းထားလိုက်ပါပြီ။`);
+function removeFromCart(productId) {
+  const index = state.cart.findIndex((item) => item.id === productId);
+  if (index >= 0) {
+    state.cart.splice(index, 1);
+    state.activePaymentIntent = null;
+    saveCart();
+    renderCart();
   }
-  renderWishlist();
-  persistState();
 }
 
-function renderStackList(container, items, emptyMessage, actionLabel, onAction) {
-  container.innerHTML = "";
+function renderProducts() {
+  const items = filteredProducts();
+  resultSummary.textContent = `${items.length} products available`;
+  metricProducts.textContent = String(state.products.length);
+  productGrid.innerHTML = "";
 
   if (!items.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = emptyMessage;
-    container.appendChild(empty);
+    productGrid.innerHTML = '<p class="empty-state">No products matched your current search.</p>';
     return;
   }
 
-  items.forEach((item) => {
-    const fragment = stackTemplate.content.cloneNode(true);
-    fragment.querySelector(".stack-image").src = item.image_url;
-    fragment.querySelector(".stack-image").alt = item.name;
-    fragment.querySelector(".stack-name").textContent = item.name;
-    fragment.querySelector(".stack-price").textContent = formatPrice(item.price);
-    fragment.querySelector(".stack-copy").textContent = item.category;
-    const action = fragment.querySelector(".stack-action");
-    action.textContent = actionLabel;
-    action.addEventListener("click", () => onAction(item));
-    container.appendChild(fragment);
+  items.forEach((product) => {
+    const article = document.createElement("article");
+    article.className = "product-card";
+    article.innerHTML = `
+      <div class="product-visual" style="background:${product.accent_color}">
+        ${productVisual(product)}
+      </div>
+      <div class="product-copy">
+        <div class="product-meta">
+          <span class="badge">${product.badge}</span>
+          <span>${product.category}</span>
+        </div>
+        <h3>${product.name}</h3>
+        <p>${product.description}</p>
+        <div class="swatches">
+          ${product.colors.map((color) => `<span>${color}</span>`).join("")}
+        </div>
+        <div class="sizes">
+          ${product.sizes.map((size) => `<span>${size}</span>`).join("")}
+        </div>
+        <div class="price-row">
+          <strong>${formatPrice(product.price)}</strong>
+          <small>${formatPrice(product.compare_at_price)}</small>
+        </div>
+        <div class="card-footer">
+          <span>Stock ${product.inventory}</span>
+          <span>★ ${product.rating.toFixed(1)}</span>
+        </div>
+      </div>
+    `;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "primary-button full-width";
+    button.textContent = "Add to Cart";
+    button.addEventListener("click", () => addToCart(product));
+    article.appendChild(button);
+    productGrid.appendChild(article);
   });
 }
 
 function renderCart() {
-  renderStackList(
-    cartList,
-    cartItems,
-    "Cart ထဲမှာ ပစ္စည်းမရှိသေးပါ။",
-    "View",
-    (item) => openProductDetail(item)
-  );
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  cartSubtotal.textContent = formatPrice(subtotal);
+  const items = groupedCartItems();
+  cartItemsEl.innerHTML = "";
+
+  if (!items.length) {
+    cartItemsEl.innerHTML = '<p class="empty-state">Your cart is empty.</p>';
+  } else {
+    items.forEach((item) => {
+      const article = document.createElement("article");
+      article.className = "cart-item";
+      article.innerHTML = `
+        <div class="cart-icon" style="background:${item.accent_color}">
+          ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" class="mini-image" />` : item.display_emoji}
+        </div>
+        <div class="cart-copy">
+          <strong>${item.name}</strong>
+          <span>${formatPrice(item.price)} x ${item.quantity}</span>
+        </div>
+      `;
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "text-button";
+      removeButton.textContent = "Remove";
+      removeButton.addEventListener("click", () => removeFromCart(item.id));
+      article.appendChild(removeButton);
+      cartItemsEl.appendChild(article);
+    });
+  }
+
+  const totals = calculateTotals();
+  cartCount.textContent = String(state.cart.length);
+  cartSubtotal.textContent = formatPrice(totals.subtotal);
+  cartShipping.textContent = formatPrice(totals.shipping);
+  cartTotal.textContent = formatPrice(totals.total);
 }
 
-function renderWishlist() {
-  renderStackList(
-    wishlistList,
-    wishlistItems,
-    "Wishlist ထဲမှာ ပစ္စည်းမရှိသေးပါ။",
-    "Add",
-    (item) => addToCart(item)
-  );
+async function api(path, options = {}) {
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (state.token) {
+    headers.Authorization = `Bearer ${state.token}`;
+  }
+
+  const response = await fetch(path, { ...options, headers });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.detail || "Request failed");
+  }
+  return data;
 }
 
-function buildProductCard(item, targetGrid, jumpToCart = false) {
-  const fragment = template.content.cloneNode(true);
-  fragment.querySelector(".product-image").src = item.image_url;
-  fragment.querySelector(".product-image").alt = item.name;
-  fragment.querySelector(".product-category").textContent = item.category;
-  fragment.querySelector(".product-name").textContent = item.name;
-  fragment.querySelector(".product-description").textContent = item.description;
-  fragment.querySelector(".product-price").textContent = formatPrice(item.price);
-  fragment.querySelector(".product-sold").textContent = `${(item.id % 9) + 1}.9k+ sold`;
-  fragment.querySelector(".product-badge").textContent = `-${getDiscountLabel(item.id)}%`;
-  fragment.querySelector(".product-old-price").textContent = formatPrice(
-    Math.round(item.price * 1.15)
-  );
+async function requestAssistantReply(prompt) {
+  const assistantEndpoints = [];
 
-  const card = fragment.querySelector(".product-card");
-  card.addEventListener("click", () => openProductDetail(item));
+  if (LOCAL_ASSISTANT_HOSTS.has(window.location.hostname)) {
+    assistantEndpoints.push({
+      url: N8N_WEBHOOK_URL,
+      options: {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      },
+    });
+  }
 
-  fragment.querySelector(".product-cart").addEventListener("click", (event) => {
-    event.stopPropagation();
-    addToCart(item);
-    if (jumpToCart) {
-      showView("cart");
-    }
+  assistantEndpoints.push({
+    url: "/api/assistant",
+    options: {
+      method: "POST",
+      body: JSON.stringify({ prompt }),
+    },
+    useApiHelper: true,
   });
 
-  targetGrid.appendChild(fragment);
-}
+  let lastError = new Error("Assistant request failed");
 
-function renderTrendView() {
-  trendGrid.innerHTML = "";
-  const trendItems = getSortedItems(menuItems, "sale").slice(0, 8);
-  trendItems.forEach((item) => buildProductCard(item, trendGrid, true));
-}
-
-function renderMenu(items) {
-  menuGrid.innerHTML = "";
-  const sortedItems = getSortedItems(items, currentSort);
-
-  if (!sortedItems.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = "No products available right now.";
-    menuGrid.appendChild(empty);
-    return;
-  }
-
-  sortedItems.forEach((item) => buildProductCard(item, menuGrid));
-}
-
-function filterMenu(query) {
-  const normalized = query.trim().toLowerCase();
-  filteredItems = menuItems.filter((item) => {
-    return (
-      !normalized ||
-      item.name.toLowerCase().includes(normalized) ||
-      item.category.toLowerCase().includes(normalized) ||
-      item.description.toLowerCase().includes(normalized)
-    );
-  });
-
-  renderMenu(filteredItems);
-}
-
-function showView(viewName, pushHistory = true) {
-  document.querySelectorAll(".view").forEach((view) => {
-    view.classList.toggle("active", view.id === `view-${viewName}`);
-  });
-
-  bottomNav.querySelectorAll(".nav-item").forEach((item) => {
-    item.classList.toggle("active", item.dataset.view === viewName);
-  });
-
-  currentView = viewName;
-  if (pushHistory && viewHistory[viewHistory.length - 1] !== viewName) {
-    viewHistory.push(viewName);
-  }
-
-  if (viewName === "cart") {
-    renderCart();
-  }
-  if (viewName === "wishlist") {
-    renderWishlist();
-  }
-  if (viewName === "trend") {
-    renderTrendView();
-  }
-  if (viewName === "messages") {
-    renderMessages();
-  }
-}
-
-function updateInstallUi(visible) {
-  installButton.classList.toggle("utility-button-hidden", !visible);
-  installBanner.classList.toggle("hidden", !visible);
-}
-
-async function triggerInstallPrompt() {
-  if (installPrompt) {
-    installPrompt.prompt();
-    await installPrompt.userChoice;
-    installPrompt = null;
-    updateInstallUi(false);
-    return;
-  }
-
-  addMessage(
-    "Install hint",
-    "iPhone မှာ Share > Add to Home Screen နဲ့ install လုပ်နိုင်ပါတယ်။ Android မှာ browser install prompt ပေါ်လာမယ်။"
-  );
-  showView("messages");
-}
-
-async function shareSelection() {
-  const item = selectedProduct || filteredItems[0] || menuItems[0];
-  if (!item) {
-    return;
-  }
-
-  const shareData = {
-    title: item.name,
-    text: `${item.name} - ${item.description}`,
-    url: window.location.origin,
-  };
-
-  if (navigator.share) {
+  for (const endpoint of assistantEndpoints) {
     try {
-      await navigator.share(shareData);
-      addMessage("Shared", `${item.name} ကို share လုပ်ပြီးပါပြီ။`);
-      return;
+      const data = endpoint.useApiHelper ? await api(endpoint.url, endpoint.options) : await fetch(endpoint.url, endpoint.options).then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.detail || payload.message || "Assistant request failed");
+        }
+        return payload;
+      });
+
+      if (typeof data.reply === "string" && data.reply.trim()) {
+        return data.reply.trim();
+      }
+
+      throw new Error("Assistant response was empty");
     } catch (error) {
-      if (error?.name === "AbortError") {
+      lastError = error instanceof Error ? error : new Error("Assistant request failed");
+    }
+  }
+
+  throw lastError;
+}
+
+function orderTimeline(order) {
+  return order.tracking_history
+    .map(
+      (entry) =>
+        `<li><strong>${entry.status}</strong> <span>${new Date(entry.timestamp).toLocaleString()}</span><p>${entry.message}</p></li>`
+    )
+    .join("");
+}
+
+async function loadOrders() {
+  if (!state.user) {
+    ordersList.innerHTML = '<p class="empty-state">Login to view order history.</p>';
+    metricOrders.textContent = "0";
+    return;
+  }
+
+  const data = await api("/api/orders");
+  state.orders = data.orders;
+  metricOrders.textContent = String(state.orders.length);
+
+  if (!state.orders.length) {
+    ordersList.innerHTML = '<p class="empty-state">No orders yet. Your completed checkouts will appear here.</p>';
+    return;
+  }
+
+  ordersList.innerHTML = "";
+  state.orders.forEach((order) => {
+    const card = document.createElement("article");
+    card.className = "order-card";
+    card.innerHTML = `
+      <strong>${order.order_number}</strong>
+      <span>${new Date(order.created_at).toLocaleString()}</span>
+      <span>Payment: ${order.payment_status}</span>
+      <span>Tracking: ${order.tracking_status}</span>
+      <span>${formatPrice(order.total)}</span>
+      <p>${order.items.map((item) => `${item.product_name} x${item.quantity}`).join(", ")}</p>
+      <ul class="timeline">${orderTimeline(order)}</ul>
+    `;
+    ordersList.appendChild(card);
+  });
+}
+
+async function loadConfig() {
+  const data = await api("/api/config");
+  state.config = data;
+  adminHint.textContent = `Default admin login: ${data.default_admin_email}. Change the password before release.`;
+  renderTelegramConfig();
+}
+
+function renderTelegramConfig() {
+  const username = state.config.telegram_bot_username?.trim();
+  const webhookUrl = state.config.telegram_webhook_url?.trim();
+
+  if (!state.config.telegram_enabled) {
+    telegramAdminSummary.textContent = "Telegram bot token is not configured yet. Add TELEGRAM_BOT_TOKEN in the server env first.";
+    telegramWebhookUrl.textContent = "Webhook URL will appear after PUBLIC_BASE_URL and bot token are configured.";
+    telegramOpenBot.classList.add("hidden");
+    telegramOpenBot.href = "#";
+    return;
+  }
+
+  telegramAdminSummary.textContent = username
+    ? `Bot is configured as @${username}. Use the button below to register the webhook with Telegram.`
+    : "Telegram bot token is configured. Add TELEGRAM_BOT_USERNAME if you want the bot link shown here.";
+  telegramWebhookUrl.textContent = webhookUrl
+    ? `Webhook URL: ${webhookUrl}`
+    : "Set PUBLIC_BASE_URL to your live HTTPS site before running webhook setup.";
+
+  if (username) {
+    telegramOpenBot.href = `https://t.me/${username}`;
+    telegramOpenBot.classList.remove("hidden");
+  } else {
+    telegramOpenBot.classList.add("hidden");
+    telegramOpenBot.href = "#";
+  }
+}
+
+async function loadProducts() {
+  state.products = await api("/api/products");
+  renderProducts();
+}
+
+async function loadCategories() {
+  state.categories = await api("/api/categories");
+  renderCategories();
+}
+
+async function refreshSession() {
+  if (!state.token) {
+    state.user = null;
+    updateAuthUi();
+    await loadOrders();
+    return;
+  }
+
+  try {
+    const data = await api("/api/me");
+    state.user = data.user;
+  } catch (error) {
+    state.token = "";
+    state.user = null;
+    localStorage.removeItem(STORAGE_KEYS.token);
+  }
+
+  updateAuthUi();
+  if (state.user) {
+    document.getElementById("checkout-name").value = state.user.full_name;
+  }
+  await loadOrders();
+  if (state.user?.role === "admin") {
+    await Promise.all([loadAdminStats(), loadAdminProducts(), loadAdminOrders()]);
+  }
+}
+
+function resetStripeUi() {
+  if (state.paymentElement) {
+    state.paymentElement.unmount();
+    state.paymentElement = null;
+  }
+  state.elements = null;
+  state.activePaymentIntent = null;
+  paymentElementContainer.innerHTML = "";
+}
+
+async function loadStripeScript() {
+  if (!state.config.stripe_enabled || window.Stripe) {
+    return;
+  }
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://js.stripe.com/v3/";
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureStripeElements() {
+  if (checkoutPayment.value !== "Stripe Card") {
+    stripePanel.classList.add("hidden");
+    return;
+  }
+
+  stripePanel.classList.remove("hidden");
+  if (!state.config.stripe_enabled) {
+    stripeNote.textContent = "Stripe keys are not configured on the server yet. Use COD or Bank Transfer for now.";
+    return;
+  }
+
+  stripeNote.textContent = "Card details are securely collected by Stripe.";
+  await loadStripeScript();
+  if (!state.stripe) {
+    state.stripe = window.Stripe(state.config.stripe_publishable_key);
+  }
+
+  if (state.user && groupedCartItems().length) {
+    await getOrCreatePaymentIntent();
+  }
+}
+
+async function getOrCreatePaymentIntent() {
+  const items = groupedCartItems().map((item) => ({
+    product_id: item.id,
+    quantity: item.quantity,
+  }));
+  const signature = JSON.stringify(items);
+  if (state.activePaymentIntent?.signature === signature) {
+    return state.activePaymentIntent;
+  }
+
+  const data = await api("/api/payments/intent", {
+    method: "POST",
+    body: JSON.stringify({ items, currency: "jpy" }),
+  });
+  state.activePaymentIntent = { ...data, signature };
+  state.elements = state.stripe.elements({ clientSecret: data.client_secret });
+  state.paymentElement = state.elements.create("payment");
+  paymentElementContainer.innerHTML = "";
+  state.paymentElement.mount("#payment-element");
+  return state.activePaymentIntent;
+}
+
+function productFormPayload() {
+  return {
+    sku: document.getElementById("product-sku").value.trim(),
+    name: document.getElementById("product-name").value.trim(),
+    category: document.getElementById("product-category").value.trim(),
+    description: document.getElementById("product-description").value.trim(),
+    price: Number(document.getElementById("product-price").value),
+    compare_at_price: Number(document.getElementById("product-compare-price").value),
+    badge: document.getElementById("product-badge").value.trim(),
+    inventory: Number(document.getElementById("product-inventory").value),
+    rating: Number(document.getElementById("product-rating").value),
+    display_emoji: document.getElementById("product-emoji").value.trim(),
+    accent_color: document.getElementById("product-accent").value.trim(),
+    sizes: parseCsv(document.getElementById("product-sizes").value),
+    colors: parseCsv(document.getElementById("product-colors").value),
+    image_url: document.getElementById("product-image-url").value.trim(),
+  };
+}
+
+function fillProductForm(product = null) {
+  document.getElementById("product-id").value = product?.id || "";
+  document.getElementById("product-sku").value = product?.sku || "";
+  document.getElementById("product-name").value = product?.name || "";
+  document.getElementById("product-category").value = product?.category || "";
+  document.getElementById("product-description").value = product?.description || "";
+  document.getElementById("product-price").value = product?.price || "";
+  document.getElementById("product-compare-price").value = product?.compare_at_price || "";
+  document.getElementById("product-badge").value = product?.badge || "";
+  document.getElementById("product-inventory").value = product?.inventory || "";
+  document.getElementById("product-rating").value = product?.rating || "";
+  document.getElementById("product-emoji").value = product?.display_emoji || "";
+  document.getElementById("product-accent").value = product?.accent_color || "#d86a7f";
+  document.getElementById("product-sizes").value = product?.sizes?.join(", ") || "";
+  document.getElementById("product-colors").value = product?.colors?.join(", ") || "";
+  document.getElementById("product-image-url").value = product?.image_url || "";
+  productStatus.textContent = "";
+}
+
+async function loadAdminStats() {
+  const data = await api("/api/admin/stats");
+  adminStats.textContent = `${data.products} products, ${data.orders} orders, ${formatPrice(data.revenue)} revenue`;
+}
+
+async function loadAdminProducts() {
+  const data = await api("/api/admin/products");
+  state.adminProducts = data.products;
+  adminProductList.innerHTML = "";
+
+  state.adminProducts.forEach((product) => {
+    const row = document.createElement("article");
+    row.className = "admin-card";
+    row.innerHTML = `
+      <div>
+        <strong>${product.name}</strong>
+        <span>${product.sku} • ${product.category}</span>
+      </div>
+      <div class="admin-row-actions">
+        <button type="button" class="ghost-button">Edit</button>
+        <button type="button" class="danger-button">Delete</button>
+      </div>
+    `;
+    const [editButton, deleteButton] = row.querySelectorAll("button");
+    editButton.addEventListener("click", () => {
+      fillProductForm(product);
+      productForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    deleteButton.addEventListener("click", async () => {
+      if (!window.confirm(`Delete ${product.name}?`)) {
         return;
       }
-    }
-  }
-
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
-    addMessage("Link copied", "Share link ကို clipboard ထဲကူးထားပါပြီ။");
-  } else {
-    addMessage("Share ready", `${shareData.title} - ${shareData.url}`);
-  }
-  showView("messages");
-}
-
-async function registerPwa() {
-  if ("serviceWorker" in navigator) {
-    try {
-      await navigator.serviceWorker.register("/service-worker.js");
-    } catch (error) {
-      console.error("Service worker registration failed", error);
-    }
-  }
-
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    installPrompt = event;
-    updateInstallUi(true);
-  });
-
-  window.addEventListener("appinstalled", () => {
-    installPrompt = null;
-    updateInstallUi(false);
-    addMessage("Installed", "ZayCho ကို home screen app အဖြစ် install လုပ်ပြီးပါပြီ။");
-  });
-}
-
-async function loadMenu() {
-  try {
-    const response = await fetch("/menu");
-    if (!response.ok) {
-      throw new Error("Failed to load menu");
-    }
-
-    menuItems = await response.json();
-    filteredItems = [...menuItems];
-    renderCategories(menuItems);
-    renderMenu(menuItems);
-    renderTrendView();
-  } catch (error) {
-    menuGrid.innerHTML = '<p class="empty-state">Could not load the menu.</p>';
-  }
-}
-
-assistantForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const prompt = promptInput.value.trim();
-
-  if (!prompt) {
-    assistantResponse.textContent = "Please type a prompt first.";
-    return;
-  }
-
-  assistantResponse.textContent = "Sending request...";
-
-  try {
-    const response = await fetch("/agent", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt }),
+      await api(`/api/admin/products/${product.id}`, { method: "DELETE" });
+      await Promise.all([loadAdminProducts(), loadProducts(), loadCategories(), loadAdminStats()]);
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch assistant response");
-    }
-
-    const data = await response.json();
-    assistantResponse.textContent = data.reply;
-    addMessage("Assistant reply", data.reply);
-  } catch (error) {
-    assistantResponse.textContent =
-      "The request did not complete. Please make sure the backend is running.";
-  }
-});
-
-searchInput.addEventListener("input", (event) => {
-  filterMenu(event.target.value);
-  showView("home");
-});
-
-document.getElementById("search-go").addEventListener("click", () => {
-  filterMenu(searchInput.value);
-  showView("home");
-  document.getElementById("menu-section").scrollIntoView({ behavior: "smooth" });
-});
-
-document.getElementById("camera-button").addEventListener("click", () => {
-  assistantResponse.textContent =
-    "Camera search demo: photo upload or barcode scan flow ကို native app step မှာဆက်ချိတ်နိုင်ပါတယ်။";
-  addMessage("Camera search", "Camera search demo flow ကို next mobile iteration အတွက် ready လုပ်ထားပါတယ်။");
-  showView("home");
-  document.getElementById("assistant-section").scrollIntoView({ behavior: "smooth" });
-});
-
-document.getElementById("wishlist-button").addEventListener("click", () => showView("wishlist"));
-document.getElementById("header-cart-button").addEventListener("click", () => showView("cart"));
-document.getElementById("brand-home-button").addEventListener("click", () => showView("home"));
-document.getElementById("mini-wishlist").addEventListener("click", () => showView("wishlist"));
-document.getElementById("mini-share").addEventListener("click", () => shareSelection());
-document.getElementById("shop-all-link").addEventListener("click", (event) => {
-  event.preventDefault();
-  showView("home");
-  document.getElementById("menu-section").scrollIntoView({ behavior: "smooth" });
-});
-document.getElementById("categories-link").addEventListener("click", (event) => {
-  event.preventDefault();
-  showView("categories");
-});
-document.getElementById("promo-cta").addEventListener("click", () => showView("cart"));
-document.getElementById("shipping-card").addEventListener("click", () => {
-  addMessage("Free shipping", "Tokyo delivery zone အတွက် free shipping promo လက်ရှိ active ဖြစ်ပါတယ်။");
-  showView("messages");
-});
-document.getElementById("coupon-card").addEventListener("click", () => showView("profile"));
-document.querySelectorAll("[data-quick-product]").forEach((card) => {
-  card.addEventListener("click", () => {
-    const item = findItemById(Number(card.dataset.quickProduct));
-    if (item) {
-      openProductDetail(item);
-    }
+    adminProductList.appendChild(row);
   });
+}
+
+async function loadAdminOrders() {
+  const data = await api("/api/admin/orders");
+  state.adminOrders = data.orders;
+  adminOrderList.innerHTML = "";
+
+  state.adminOrders.forEach((order) => {
+    const card = document.createElement("article");
+    card.className = "admin-order-card";
+    card.innerHTML = `
+      <strong>${order.order_number}</strong>
+      <span>${order.customer_name} • ${formatPrice(order.total)}</span>
+      <span>${order.payment_method} / ${order.payment_status}</span>
+      <input type="text" class="order-status-input" value="${order.status}" placeholder="Order status" />
+      <select class="tracking-select">
+        ${state.config.tracking_steps
+          .map((step) => `<option value="${step}" ${step === order.tracking_status ? "selected" : ""}>${step}</option>`)
+          .join("")}
+      </select>
+      <input type="text" class="tracking-number-input" value="${order.tracking_number || ""}" placeholder="Tracking number" />
+      <input type="text" class="tracking-note-input" placeholder="Tracking note" />
+      <button type="button" class="primary-button">Save Tracking</button>
+    `;
+    const button = card.querySelector("button");
+    button.addEventListener("click", async () => {
+      const status = card.querySelector(".order-status-input").value.trim();
+      const trackingStatus = card.querySelector(".tracking-select").value;
+      const trackingNumber = card.querySelector(".tracking-number-input").value.trim();
+      const note = card.querySelector(".tracking-note-input").value.trim();
+      await api(`/api/admin/orders/${order.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status,
+          tracking_status: trackingStatus,
+          tracking_number: trackingNumber,
+          note,
+        }),
+      });
+      adminOrderStatus.textContent = `${order.order_number} updated.`;
+      await Promise.all([loadAdminOrders(), loadOrders(), loadAdminStats()]);
+    });
+    adminOrderList.appendChild(card);
+  });
+}
+
+authModeToggle.addEventListener("click", () => {
+  state.mode = state.mode === "login" ? "register" : "login";
+  authStatus.textContent = "";
+  updateAuthUi();
 });
 
-document.getElementById("detail-add-cart").addEventListener("click", () => {
-  if (selectedProduct) {
-    addToCart(selectedProduct);
-    showView("cart");
+authForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authStatus.textContent = "Working...";
+
+  const payload =
+    state.mode === "register"
+      ? {
+          full_name: authName.value.trim(),
+          email: authEmail.value.trim(),
+          password: authPassword.value,
+        }
+      : {
+          email: authEmail.value.trim(),
+          password: authPassword.value,
+        };
+
+  try {
+    const data = await api(state.mode === "register" ? "/api/auth/register" : "/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    state.token = data.token;
+    state.user = data.user;
+    localStorage.setItem(STORAGE_KEYS.token, state.token);
+    authStatus.textContent = state.mode === "register" ? "Account created successfully." : "Logged in successfully.";
+    authForm.reset();
+    state.mode = "login";
+    updateAuthUi();
+    await refreshSession();
+  } catch (error) {
+    authStatus.textContent = error.message;
   }
 });
 
-document.getElementById("detail-wishlist").addEventListener("click", () => {
-  if (selectedProduct) {
-    addToWishlist(selectedProduct);
-    showView("wishlist");
+logoutButton.addEventListener("click", async () => {
+  state.token = "";
+  state.user = null;
+  localStorage.removeItem(STORAGE_KEYS.token);
+  resetStripeUi();
+  authStatus.textContent = "Logged out.";
+  updateAuthUi();
+  await loadOrders();
+});
+
+deleteAccountButton.addEventListener("click", async () => {
+  if (!window.confirm("Delete your account and order history from this starter app?")) {
+    return;
+  }
+  try {
+    await api("/api/me", { method: "DELETE" });
+    state.token = "";
+    state.user = null;
+    localStorage.removeItem(STORAGE_KEYS.token);
+    state.orders = [];
+    updateAuthUi();
+    await loadOrders();
+    authStatus.textContent = "Account deleted.";
+  } catch (error) {
+    authStatus.textContent = error.message;
   }
 });
 
-document.getElementById("checkout-button").addEventListener("click", () => {
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  if (!cartItems.length) {
-    addMessage("Cart is empty", "Checkout မလုပ်ခင် ပစ္စည်းတစ်ခုခုရွေးပါ။");
-    showView("messages");
+checkoutToggle.addEventListener("click", async () => {
+  checkoutPanel.classList.add("open");
+  checkoutPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  await ensureStripeElements();
+});
+
+closeCheckout.addEventListener("click", () => {
+  checkoutPanel.classList.remove("open");
+});
+
+checkoutPayment.addEventListener("change", async () => {
+  resetStripeUi();
+  await ensureStripeElements();
+});
+
+checkoutForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (!state.user) {
+    checkoutStatus.textContent = "Checkout မတင်ခင် account ဝင်ထားဖို့လိုပါတယ်။";
     return;
   }
 
-  addMessage(
-    "Checkout ready",
-    `${cartItems.length} items, total ${formatPrice(subtotal)}. Payment gateway နှင့် address form ကို native release step မှာဆက်ချိတ်နိုင်ပါတယ်။`
-  );
-  cartItems = [];
-  updateCartCount();
+  const items = groupedCartItems().map((item) => ({
+    product_id: item.id,
+    quantity: item.quantity,
+  }));
+  if (!items.length) {
+    checkoutStatus.textContent = "Cart is empty.";
+    return;
+  }
+
+  checkoutStatus.textContent = "Placing order...";
+  let paymentStatus = "Pending";
+  let paymentProvider = "";
+  let paymentIntentId = "";
+
+  try {
+    if (checkoutPayment.value === "Stripe Card") {
+      if (!state.config.stripe_enabled) {
+        throw new Error("Stripe is not configured on the server.");
+      }
+      await ensureStripeElements();
+      const intent = await getOrCreatePaymentIntent();
+      const result = await state.stripe.confirmPayment({
+        elements: state.elements,
+        redirect: "if_required",
+      });
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+      paymentStatus = result.paymentIntent?.status || "processing";
+      paymentProvider = "stripe";
+      paymentIntentId = result.paymentIntent?.id || intent.payment_intent_id;
+    }
+
+    const data = await api("/api/orders", {
+      method: "POST",
+      body: JSON.stringify({
+        customer_name: document.getElementById("checkout-name").value.trim(),
+        phone: document.getElementById("checkout-phone").value.trim(),
+        city: document.getElementById("checkout-city").value.trim(),
+        payment_method: checkoutPayment.value,
+        payment_status: paymentStatus,
+        payment_provider: paymentProvider,
+        payment_intent_id: paymentIntentId,
+        address_line: document.getElementById("checkout-address").value.trim(),
+        notes: document.getElementById("checkout-notes").value.trim(),
+        items,
+      }),
+    });
+    checkoutStatus.textContent = `${data.order.order_number} order ကိုအောင်မြင်စွာတင်ပြီးပါပြီ။`;
+    state.cart = [];
+    saveCart();
+    renderCart();
+    checkoutForm.reset();
+    resetStripeUi();
+    await Promise.all([loadProducts(), loadOrders()]);
+    checkoutPayment.value = "Cash on Delivery";
+    stripePanel.classList.add("hidden");
+  } catch (error) {
+    checkoutStatus.textContent = error.message;
+  }
+});
+
+assistantSubmit.addEventListener("click", async () => {
+  const prompt = assistantInput.value.trim();
+  if (!prompt) {
+    assistantResponse.textContent = "Type a question first.";
+    return;
+  }
+
+  assistantResponse.textContent = "Thinking...";
+  try {
+    assistantResponse.textContent = await requestAssistantReply(prompt);
+  } catch (error) {
+    assistantResponse.textContent = error.message;
+  }
+});
+
+searchInput.addEventListener("input", () => renderProducts());
+
+openCartButton.addEventListener("click", () => {
+  cartItemsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+scrollAdmin.addEventListener("click", () => {
+  adminPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+telegramSetupButton.addEventListener("click", async () => {
+  telegramStatus.textContent = "Setting Telegram webhook...";
+  try {
+    const data = await api("/api/telegram/set-webhook", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    state.config.telegram_webhook_url = data.webhook_url || state.config.telegram_webhook_url;
+    renderTelegramConfig();
+    telegramStatus.textContent = data.ok
+      ? `Webhook connected: ${data.webhook_url}`
+      : "Telegram webhook request completed, but Telegram did not confirm success.";
+  } catch (error) {
+    telegramStatus.textContent = error.message;
+  }
+});
+
+clearProductForm.addEventListener("click", () => fillProductForm());
+
+uploadImageButton.addEventListener("click", async () => {
+  const file = productImageFile.files?.[0];
+  if (!file) {
+    productStatus.textContent = "Choose an image file first.";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      productStatus.textContent = "Uploading image...";
+      const data = await api("/api/admin/uploads", {
+        method: "POST",
+        body: JSON.stringify({
+          filename: file.name,
+          content_base64: reader.result,
+        }),
+      });
+      document.getElementById("product-image-url").value = data.url;
+      productStatus.textContent = "Image uploaded successfully.";
+    } catch (error) {
+      productStatus.textContent = error.message;
+    }
+  };
+  reader.readAsDataURL(file);
+});
+
+productForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const productId = document.getElementById("product-id").value;
+  try {
+    productStatus.textContent = "Saving product...";
+    await api(productId ? `/api/admin/products/${productId}` : "/api/admin/products", {
+      method: productId ? "PUT" : "POST",
+      body: JSON.stringify(productFormPayload()),
+    });
+    productStatus.textContent = "Product saved.";
+    fillProductForm();
+    await Promise.all([loadProducts(), loadCategories(), loadAdminProducts(), loadAdminStats()]);
+  } catch (error) {
+    productStatus.textContent = error.message;
+  }
+});
+
+async function init() {
+  loadCart();
   renderCart();
-  persistState();
-  showView("messages");
-});
+  updateAuthUi();
 
-document.getElementById("buy-action").addEventListener("click", () => {
-  const target = selectedProduct || filteredItems[0] || menuItems[0];
-  if (target) {
-    addToCart(target);
-  }
-  showView("cart");
-});
+  await loadConfig();
+  await Promise.all([loadProducts(), loadCategories(), refreshSession()]);
+}
 
-document.getElementById("profile-orders").addEventListener("click", () => showView("messages"));
-document.getElementById("profile-coupons").addEventListener("click", () => {
-  addMessage("Coupon ready", "Member credit ¥5000 ကို launch promo အတွက်သုံးနိုင်ပါတယ်။");
-  showView("messages");
+init().catch((error) => {
+  resultSummary.textContent = error.message;
 });
-document.getElementById("profile-address").addEventListener("click", () => {
-  addMessage("Delivery zone", "Tokyo delivery zone setup ပြီးရင် address form နဲ့ map integration ဆက်ချိတ်နိုင်ပါတယ်။");
-  showView("messages");
-});
-document.getElementById("profile-support").addEventListener("click", () => showView("messages"));
-installButton.addEventListener("click", () => triggerInstallPrompt());
-installNowButton.addEventListener("click", () => triggerInstallPrompt());
-
-trendTabs.querySelectorAll(".trend-tab").forEach((button) => {
-  button.addEventListener("click", () => {
-    updateActiveButtons(trendTabs, ".trend-tab", button.dataset.query, "data-query");
-    searchInput.value = button.dataset.query;
-    filterMenu(button.dataset.query);
-    showView("home");
-  });
-});
-
-recommendTabs.querySelectorAll(".recommend-tab").forEach((button) => {
-  button.addEventListener("click", () => {
-    currentSort = button.dataset.sort;
-    updateActiveButtons(recommendTabs, ".recommend-tab", currentSort, "data-sort");
-    renderMenu(filteredItems);
-  });
-});
-
-bottomNav.querySelectorAll(".nav-item").forEach((button) => {
-  button.addEventListener("click", () => showView(button.dataset.view));
-});
-
-backButton.addEventListener("click", () => {
-  if (viewHistory.length > 1) {
-    viewHistory.pop();
-    showView(viewHistory[viewHistory.length - 1], false);
-  } else {
-    showView("home", false);
-  }
-});
-
-hydrateState();
-updateInstallUi(false);
-loadMenu();
-updateCartCount();
-renderCart();
-renderWishlist();
-renderMessages();
-registerPwa();

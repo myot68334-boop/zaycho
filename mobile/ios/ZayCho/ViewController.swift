@@ -2,7 +2,10 @@ import UIKit
 import WebKit
 
 final class ViewController: UIViewController, WKNavigationDelegate {
-    private let appURL = URL(string: "https://zaycho.onrender.com")!
+    private lazy var appURL: URL = {
+        let rawURL = Bundle.main.object(forInfoDictionaryKey: "AppBaseURL") as? String ?? "https://example.com"
+        return URL(string: rawURL)!
+    }()
     private let webView = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
     private let refreshControl = UIRefreshControl()
     private let activityIndicator = UIActivityIndicatorView(style: .large)
@@ -14,7 +17,7 @@ final class ViewController: UIViewController, WKNavigationDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = "ZayCho"
+        title = "Lyra Shop"
         view.backgroundColor = .systemBackground
         webView.navigationDelegate = self
         webView.allowsBackForwardNavigationGestures = true

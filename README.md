@@ -1,82 +1,59 @@
-# ZayCho
+# Lyra Shop
 
-ZayCho is a Myanmar grocery storefront built on FastAPI with a mobile-first frontend, PWA support, and native iOS/Android wrapper scaffolds for store packaging.
+Lyra Shop is a starter e-commerce app for clothing and cosmetics. It includes a FastAPI backend, SQLite database, account login/register flow, product catalog, cart, checkout, order history, admin dashboard, image upload, Stripe-ready card payments, and delivery tracking.
 
-## What is included
+## Included now
 
-- FastAPI backend for menu, category, assistant, and health endpoints
-- Mobile storefront frontend served directly from FastAPI
-- Wishlist, cart, trend picks, category browsing, and assistant flows
-- PWA metadata, install prompt support, and service worker caching
-- Native mobile wrapper scaffolds under [`mobile`](/Users/myothant/Documents/New%20project/mobile)
-- Render deployment config in [`render.yaml`](/Users/myothant/Documents/New%20project/render.yaml)
+- Fashion + beauty storefront UI
+- FastAPI API for products, auth, checkout, orders, and shopping assistant
+- SQLite database with seeded catalog data
+- Session-based login and register flow
+- Cart and checkout flow connected to persistent orders
+- Admin product CRUD and order tracking tools
+- Account deletion flow and store-policy pages
+- Mobile wrapper configuration for iOS and Android store builds
 
-## Project structure
+## Main files
 
-```text
-zaycho_backend/
-  assets/
-  data/
-  frontend/
-    app.js
-    index.html
-    manifest.webmanifest
-    service-worker.js
-    styles.css
-  scripts/
-  requirements.txt
-  server.py
-mobile/
-  ios/
-  android/
-docs/
-  store/
-```
+- [`zaycho_backend/server.py`](/Users/myothant/Documents/New%20project/zaycho_backend/server.py)
+- [`zaycho_backend/database.py`](/Users/myothant/Documents/New%20project/zaycho_backend/database.py)
+- [`zaycho_backend/frontend/index.html`](/Users/myothant/Documents/New%20project/zaycho_backend/frontend/index.html)
+- [`zaycho_backend/frontend/app.js`](/Users/myothant/Documents/New%20project/zaycho_backend/frontend/app.js)
+- [`zaycho_backend/frontend/styles.css`](/Users/myothant/Documents/New%20project/zaycho_backend/frontend/styles.css)
 
-## Local run
+## Run locally
 
 ```bash
 cd "/Users/myothant/Documents/New project/zaycho_backend"
-test_env/bin/python server.py
+python3 server.py
 ```
 
-Open:
+Then open:
 
 - `http://127.0.0.1:8080/`
 - `http://127.0.0.1:8080/docs`
 - `http://127.0.0.1:8080/healthz`
 
-## API endpoints
+## Current API
 
-- `GET /menu`
-- `GET /menu/categories`
-- `POST /agent`
-- `GET /healthz`
+- `GET /api/products`
+- `GET /api/categories`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/me`
+- `GET /api/orders`
+- `POST /api/orders`
+- `POST /api/assistant`
+- `POST /api/payments/intent`
+- `GET /api/admin/stats`
+- `POST /api/admin/uploads`
+- `GET/POST/PUT/DELETE /api/admin/products`
+- `GET /api/admin/orders`
+- `PATCH /api/admin/orders/{order_id}`
 
-Example:
+## Next suggested upgrades
 
-```bash
-curl http://127.0.0.1:8080/menu
-curl http://127.0.0.1:8080/healthz
-```
-
-## Mobile packaging
-
-- iOS wrapper scaffold: [`mobile/ios`](/Users/myothant/Documents/New%20project/mobile/ios)
-- Android wrapper scaffold: [`mobile/android`](/Users/myothant/Documents/New%20project/mobile/android)
-- Store release notes: [`docs/store`](/Users/myothant/Documents/New%20project/docs/store)
-- Submission commands: [`docs/store/submission-command-cheatsheet.md`](/Users/myothant/Documents/New%20project/docs/store/submission-command-cheatsheet.md)
-- Exact form text: [`docs/store/store-form-exact-text.md`](/Users/myothant/Documents/New%20project/docs/store/store-form-exact-text.md)
-- iOS export plist: [`mobile/ios/ExportOptions.plist`](/Users/myothant/Documents/New%20project/mobile/ios/ExportOptions.plist)
-
-## Deployment
-
-Live web deployment:
-
-- [zaycho.onrender.com](https://zaycho.onrender.com)
-- [zaycho.onrender.com/privacy](https://zaycho.onrender.com/privacy)
-- [zaycho.onrender.com/support](https://zaycho.onrender.com/support)
-
-Repository:
-
-- [myot68334-boop/zaycho](https://github.com/myot68334-boop/zaycho)
+- Add webhook-based Stripe payment confirmation
+- Add shipment carrier API integration
+- Add inventory alerts, coupon management, and analytics
+- Replace local file uploads with object storage such as S3 or Cloudflare R2

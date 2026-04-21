@@ -1,4 +1,4 @@
-name: ZayCho
+name: LyraShop
 options:
   minimumXcodeGenVersion: 2.45.0
 settings:
@@ -7,6 +7,7 @@ settings:
     DEVELOPMENT_TEAM: YOUR_TEAM_ID
     SWIFT_VERSION: 5.0
     INFOPLIST_FILE: ZayCho/Info.plist
+    APP_BASE_URL: https://example.com
 targets:
   ZayCho:
     type: application
@@ -16,7 +17,7 @@ targets:
       - ZayCho
     settings:
       base:
-        PRODUCT_NAME: ZayCho
+        PRODUCT_NAME: Lyra Shop
         TARGETED_DEVICE_FAMILY: "1,2"
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 1.0.0

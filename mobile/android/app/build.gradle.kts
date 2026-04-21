@@ -21,6 +21,12 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        resValue("string", "app_name", "Lyra Shop")
+        buildConfigField(
+            "String",
+            "APP_URL",
+            "\"${(project.findProperty("APP_URL") as String?) ?: System.getenv("PUBLIC_BASE_URL") ?: "https://example.com"}\""
+        )
     }
 
     signingConfigs {
@@ -55,6 +61,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 }
 

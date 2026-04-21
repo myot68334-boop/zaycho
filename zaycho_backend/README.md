@@ -41,6 +41,32 @@ The homepage shows:
 
 The server reads the `PORT` environment variable automatically. That means the same app can run locally and on services like Render without changing the code.
 
+## Telegram bot
+
+You can connect a Telegram bot to the same assistant reply logic.
+
+Required environment variables:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_BOT_USERNAME` (optional, for display only)
+- `PUBLIC_BASE_URL` (required for webhook setup on a public deployment)
+
+Telegram endpoints:
+
+- `GET /api/telegram/config`
+- `POST /api/telegram/set-webhook`
+- `POST /api/telegram/webhook/{token}`
+
+Webhook setup flow:
+
+1. Create a bot with BotFather
+2. Set `TELEGRAM_BOT_TOKEN`
+3. Set `PUBLIC_BASE_URL` to your live site URL
+4. Log in as admin on ZayCho
+5. Call `POST /api/telegram/set-webhook`
+
+After that, Telegram messages sent to your bot will receive the same recommendation replies as `/api/assistant`.
+
 ## Available endpoints
 
 ### `GET /menu`

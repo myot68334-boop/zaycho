@@ -9,8 +9,10 @@ __pycache__/
 zaycho_backend/test_env/
 zaycho_backend/.venv/
 zaycho_backend/venv/
+zaycho_backend/.env
 
 zaycho_backend/zaycho.db
+zaycho_backend/store.db
 mobile/android/.gradle/
 mobile/android/local.properties
 mobile/android/app/build/

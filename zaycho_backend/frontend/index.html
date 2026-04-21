@@ -1,380 +1,283 @@
 <!DOCTYPE html>
-<html lang="my">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#7ea9da" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="ZayCho" />
+    <meta name="theme-color" content="#d86a7f" />
     <meta
       name="description"
-      content="ZayCho Myanmar grocery storefront with menu browsing, wishlist, cart, and assistant support."
+      content="Lyra Shop is a production-oriented fashion and beauty commerce app with auth, admin dashboard, Stripe-ready payments, upload, and tracking."
     />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" />
-    <title>ZayCho Shop</title>
+    <title>Lyra Shop</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="app-shell">
+    <div class="page-shell">
       <header class="topbar">
-        <div class="status-row">
-          <span class="status-time">ZAYCHO</span>
-          <div class="status-icons">
-            <span>4G</span>
-            <span>•••</span>
+        <div class="brand">
+          <span class="brand-mark">L</span>
+          <div>
+            <strong>Lyra Shop</strong>
+            <small>Fashion, Beauty, and Commerce</small>
           </div>
         </div>
-
-        <div class="search-strip">
-          <button class="utility-button" id="back-button" aria-label="Back">‹</button>
-          <div class="search-panel">
-            <span class="search-lead">မြန်မာစားစရာ 🌶</span>
-            <input id="search-input" placeholder="ပစ္စည်းရှာရန်..." />
-            <button type="button" class="camera-button" id="camera-button" aria-label="Scan">📷</button>
-            <button type="button" class="search-go" id="search-go" aria-label="Search">⌕</button>
-          </div>
-          <button class="utility-button cart-button" id="header-cart-button" aria-label="Cart">
-            <span class="cart-glyph">🛒</span>
-            <span class="cart-badge" id="cart-count">0</span>
-          </button>
-        </div>
-
-        <div class="brand-ribbon">
-          <button class="brand-lockup" id="brand-home-button" aria-label="Go home">
-            <img
-              class="brand-logo"
-              src="/assets/images/zaycho_logo.png"
-              alt="ZayCho logo"
-            />
-            <div class="brand-copy">
-              <strong>ZAYCHO</strong>
-              <small>Japan Myanmar Grocery Edit</small>
-            </div>
-          </button>
-          <div class="brand-actions">
-            <button class="utility-button utility-button-hidden" id="install-button" aria-label="Install app">⇩</button>
-            <button class="utility-button" id="wishlist-button" aria-label="Wishlist">♡</button>
-          </div>
-        </div>
-
-        <nav class="trend-tabs" id="trend-tabs">
-          <button class="trend-tab active" data-query="">အားလုံး</button>
-          <button class="trend-tab" data-query="လက်ဖက်">လက်ဖက်</button>
-          <button class="trend-tab" data-query="ဟင်းအနှစ်">ဟင်းအနှစ်</button>
-          <button class="trend-tab" data-query="အသင့်စား">အသင့်စား</button>
-          <button class="trend-tab" data-query="ကော်ဖီ">ကော်ဖီ</button>
+        <nav class="top-actions">
+          <a href="/privacy" class="ghost-button">Privacy</a>
+          <a href="/support" class="ghost-button">Support</a>
+          <button type="button" class="cart-chip" id="open-cart-button">Cart <span id="cart-count">0</span></button>
         </nav>
       </header>
 
-      <main class="views">
-        <section class="view active" id="view-home">
-          <section class="feature-stage">
-            <div class="feature-grid">
-              <article class="feature-tile mini">
-                <img src="/assets/images/tea_eaves_Assorted/0001.png" alt="Tea leaves" />
-                <div class="tile-caption">
-                  <span>1.</span>
-                  <small>လက်ဖက်</small>
-                </div>
+      <main>
+        <section class="hero">
+          <div class="hero-copy">
+            <span class="eyebrow">Storefront + operations + release prep</span>
+            <h1>App Store နဲ့ Play Store တင်နိုင်ဖို့ နီးစပ်တဲ့ e-commerce foundation</h1>
+            <p>
+              Customer shopping flow, admin dashboard, Stripe-ready card payments, image upload,
+              delivery tracking, privacy/account deletion support, and mobile wrapper packaging
+              documents ကို တစ်စုတစ်စည်းထဲ ထည့်ထားပါတယ်။
+            </p>
+            <div class="hero-actions">
+              <a href="#catalog" class="primary-link">Browse Products</a>
+              <button type="button" class="ghost-button" id="scroll-admin">Open Admin</button>
+            </div>
+            <div class="hero-metrics">
+              <article>
+                <strong id="metric-products">12</strong>
+                <span>Products</span>
               </article>
-              <article class="feature-tile mini">
-                <img src="/assets/images/canned_foods/0019.png" alt="Canned food" />
-                <div class="tile-caption">
-                  <span>2.</span>
-                  <small>အသင့်စား</small>
-                </div>
+              <article>
+                <strong id="metric-orders">0</strong>
+                <span>Orders</span>
               </article>
-              <article class="feature-tile hero">
-                <div class="hero-copy">
-                  <span class="hero-label">Spring Grocery Drop</span>
-                  <h1>မြန်မာ့အရသာများကို<br />လက်တစ်ကမ်းနဲ့ ရွေးပါ</h1>
-                  <p>အရမ်းဝယ်ဖြစ်တဲ့ လက်ဖက်၊ ဟင်းအနှစ်နဲ့ ready-to-eat items တွေကို ဒီတစ်ပတ်အတွက်စုပေးထားပါတယ်။</p>
-                </div>
-                <img src="/assets/images/zaycho_logo.png" alt="ZayCho" class="hero-mark" />
-              </article>
-              <article class="feature-tile mini">
-                <img src="/assets/images/coffee_Tea/0042.png" alt="Tea mix" />
-                <div class="tile-caption">
-                  <span>3.</span>
-                  <small>Tea mix</small>
-                </div>
-              </article>
-              <article class="feature-tile mini">
-                <img src="/assets/images/curry_paste_powder_Spices/0015.png" alt="Spices" />
-                <div class="tile-caption">
-                  <span>4.</span>
-                  <small>Hot pot</small>
-                </div>
+              <article>
+                <strong>API</strong>
+                <span>Auth, Payment, Tracking</span>
               </article>
             </div>
-          </section>
+          </div>
+          <div class="hero-stage">
+            <article class="stage-card stage-card-main">
+              <span>Admin credentials</span>
+              <strong>Default admin email is shown in config</strong>
+              <p id="admin-hint">Change the admin password before production release.</p>
+            </article>
+            <article class="stage-card">
+              <span>Card payments</span>
+              <strong>Stripe Payment Intents</strong>
+            </article>
+            <article class="stage-card">
+              <span>Delivery flow</span>
+              <strong>Pending → Paid → Packed → Shipped → Delivered</strong>
+            </article>
+          </div>
+        </section>
 
-          <section class="promo-section">
-            <div class="section-header compact">
-              <strong>အသစ်ရောက် ပစ္စည်းများ</strong>
-              <a href="#menu-section" id="shop-all-link">အားလုံးကြည့်ရန်</a>
+        <section class="control-bar" id="catalog">
+          <div class="search-box">
+            <label for="search-input">Search catalog</label>
+            <input id="search-input" type="search" placeholder="Search shirts, serums, lip tint..." />
+          </div>
+          <div class="assistant-box">
+            <label for="assistant-input">Shopping assistant</label>
+            <div class="assistant-row">
+              <input id="assistant-input" type="text" placeholder="Ask for skincare or outfit suggestions..." />
+              <button type="button" class="primary-button" id="assistant-submit">Ask</button>
             </div>
-            <div class="promo-board">
-              <div class="promo-pill user-only">အသစ်ဝင် User များအတွက်</div>
-              <div class="promo-cards">
-                <article class="promo-card sale" data-quick-product="2">
-                  <span class="promo-tag">-25%</span>
-                  <img src="/assets/images/tea_eaves_Assorted/0002.png" alt="Promo item" />
-                  <strong>လက်ဖက် Set</strong>
-                  <small>¥950</small>
-                </article>
-                <article class="promo-card shipping" id="shipping-card">
-                  <span class="promo-tag">Free</span>
-                  <strong>ပို့ခအခမဲ့</strong>
-                  <p>Tokyo အတွင်း order များအတွက်</p>
-                </article>
-                <article class="promo-card coupon" id="coupon-card">
-                  <span class="promo-tag">ကူပွန်</span>
-                  <strong>¥5000</strong>
-                  <p>member credit</p>
-                </article>
+            <p id="assistant-response">Recommendations will appear here.</p>
+          </div>
+        </section>
+
+        <section class="catalog-layout">
+          <aside class="sidebar">
+            <section class="panel auth-panel" id="auth-panel">
+              <div class="panel-head">
+                <h2>Account</h2>
+                <button type="button" class="text-button" id="auth-mode-toggle">Switch to Register</button>
               </div>
-              <button class="promo-cta" id="promo-cta">အခုဝယ်ယူမည်</button>
-            </div>
-          </section>
+              <div id="auth-state-guest">
+                <form id="auth-form" class="stack-form">
+                  <input id="auth-name" type="text" placeholder="Full name" />
+                  <input id="auth-email" type="email" placeholder="Email address" required />
+                  <input id="auth-password" type="password" placeholder="Password" required />
+                  <button type="submit" class="primary-button" id="auth-submit">Login</button>
+                </form>
+                <p class="muted" id="auth-helper">Register mode မှာ full name လိုအပ်ပါတယ်။</p>
+              </div>
+              <div id="auth-state-user" class="hidden">
+                <div class="account-card">
+                  <strong id="account-name"></strong>
+                  <span id="account-email"></span>
+                  <span id="account-role"></span>
+                  <div class="account-actions">
+                    <button type="button" class="ghost-button full-width" id="logout-button">Logout</button>
+                    <button type="button" class="danger-button full-width" id="delete-account-button">Delete Account</button>
+                  </div>
+                </div>
+              </div>
+              <p class="status-text" id="auth-status"></p>
+            </section>
 
-          <section class="category-section">
-            <div class="section-header compact">
-              <strong>Categories</strong>
-              <a href="#categories" id="categories-link">Shop all</a>
-            </div>
-            <div id="category-strip" class="category-grid"></div>
-          </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Categories</h2>
+              </div>
+              <div class="category-list" id="category-list"></div>
+            </section>
 
-          <section id="menu-section" class="product-section">
-            <div class="section-header">
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Store links</h2>
+              </div>
+              <ul class="feature-list">
+                <li><a href="/privacy">Privacy policy</a></li>
+                <li><a href="/support">Support page</a></li>
+                <li><a href="/account-delete">Account deletion help</a></li>
+              </ul>
+            </section>
+          </aside>
+
+          <section class="catalog-main">
+            <div class="section-head">
               <div>
-                <span class="section-label">Recommended</span>
-                <h2>Featured products</h2>
+                <span class="eyebrow">Catalog</span>
+                <h2>Featured Collection</h2>
               </div>
+              <p id="result-summary">Loading products...</p>
             </div>
-            <div class="recommend-tabs" id="recommend-tabs">
-              <button class="recommend-tab active" data-sort="recommended">အကြိုက်ဆုံး</button>
-              <button class="recommend-tab" data-sort="latest">အသစ်ဝင်</button>
-              <button class="recommend-tab" data-sort="sale">SALE</button>
-              <button class="recommend-tab" data-sort="bestseller">Best Seller</button>
-            </div>
-            <div id="menu-grid" class="product-grid"></div>
+            <div class="product-grid" id="product-grid"></div>
           </section>
 
-          <section id="assistant-section" class="assistant-section">
-            <div class="assistant-card">
-              <div class="assistant-heading">
-                <div>
-                  <span class="section-label">Assistant</span>
-                  <h2>ဘာရှာနေသလဲ?</h2>
-                </div>
-                <span class="assistant-badge">Live</span>
+          <aside class="sidebar">
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Your Cart</h2>
               </div>
-              <form id="assistant-form" class="assistant-form">
-                <textarea
-                  id="prompt"
-                  name="prompt"
-                  rows="4"
-                  placeholder="ဥပမာ - လက်ဖက်နဲ့ လိုက်ဖက်မယ့် အကြော်စုံပြပါ"
-                ></textarea>
-                <button type="submit">မေးမယ်</button>
+              <div id="cart-items" class="cart-items"></div>
+              <div class="cart-summary">
+                <div><span>Subtotal</span><strong id="cart-subtotal">¥0</strong></div>
+                <div><span>Shipping</span><strong id="cart-shipping">¥0</strong></div>
+                <div class="cart-total"><span>Total</span><strong id="cart-total">¥0</strong></div>
+                <button type="button" class="primary-button full-width" id="checkout-toggle">Proceed to Checkout</button>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Your Orders</h2>
+              </div>
+              <div id="orders-list" class="orders-list">
+                <p class="empty-state">Login to view order history.</p>
+              </div>
+            </section>
+          </aside>
+        </section>
+
+        <section class="checkout-panel panel" id="checkout-panel">
+          <div class="panel-head">
+            <h2>Checkout</h2>
+            <button type="button" class="text-button" id="close-checkout">Close</button>
+          </div>
+          <form id="checkout-form" class="checkout-grid">
+            <input id="checkout-name" type="text" placeholder="Customer name" required />
+            <input id="checkout-phone" type="text" placeholder="Phone number" required />
+            <input id="checkout-city" type="text" placeholder="City" required />
+            <select id="checkout-payment" required>
+              <option value="Cash on Delivery">Cash on Delivery</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Stripe Card">Stripe Card</option>
+            </select>
+            <textarea id="checkout-address" placeholder="Delivery address" required></textarea>
+            <textarea id="checkout-notes" placeholder="Order notes (optional)"></textarea>
+            <div class="stripe-panel hidden" id="stripe-panel">
+              <div class="panel-note" id="stripe-note">
+                Stripe card payment will load here when server keys are configured.
+              </div>
+              <div id="payment-element"></div>
+            </div>
+            <button type="submit" class="primary-button">Place Order</button>
+          </form>
+          <p class="status-text" id="checkout-status"></p>
+        </section>
+
+        <section class="panel admin-panel hidden" id="admin-panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">Admin</span>
+              <h2>Store Dashboard</h2>
+            </div>
+            <p class="muted" id="admin-stats">Login as admin to manage products and orders.</p>
+          </div>
+
+          <div class="admin-grid">
+            <section class="panel panel-nested">
+              <div class="panel-head">
+                <h2>Product Manager</h2>
+                <button type="button" class="text-button" id="clear-product-form">Clear</button>
+              </div>
+              <form id="product-form" class="admin-form">
+                <input id="product-id" type="hidden" />
+                <input id="product-sku" type="text" placeholder="SKU" required />
+                <input id="product-name" type="text" placeholder="Product name" required />
+                <input id="product-category" type="text" placeholder="Category" required />
+                <input id="product-badge" type="text" placeholder="Badge" required />
+                <input id="product-price" type="number" placeholder="Price" required />
+                <input id="product-compare-price" type="number" placeholder="Compare at price" required />
+                <input id="product-inventory" type="number" placeholder="Inventory" required />
+                <input id="product-rating" type="number" step="0.1" placeholder="Rating" required />
+                <input id="product-emoji" type="text" placeholder="Emoji" required />
+                <input id="product-accent" type="text" placeholder="Accent color (#hex)" required />
+                <input id="product-sizes" type="text" placeholder="Sizes, comma separated" required />
+                <input id="product-colors" type="text" placeholder="Colors, comma separated" required />
+                <textarea id="product-description" placeholder="Description" required></textarea>
+                <div class="upload-row">
+                  <input id="product-image-file" type="file" accept="image/*" />
+                  <button type="button" class="ghost-button" id="upload-image-button">Upload Image</button>
+                </div>
+                <input id="product-image-url" type="text" placeholder="Image URL" />
+                <button type="submit" class="primary-button">Save Product</button>
               </form>
-              <div class="response-box">
-                <p class="response-label">Response</p>
-                <pre id="assistant-response">Waiting for your message...</pre>
+              <p class="status-text" id="product-status"></p>
+            </section>
+
+            <section class="panel panel-nested">
+              <div class="panel-head">
+                <h2>Products</h2>
               </div>
-              <div class="install-banner" id="install-banner">
-                <div>
-                  <strong>App အဖြစ် install လုပ်နိုင်ပါတယ်</strong>
-                  <p>iPhone/Android home screen ပေါ်တင်ပြီး app လိုသုံးနိုင်ပါတယ်။</p>
-                </div>
-                <button type="button" class="secondary-action install-now" id="install-now">
-                  Install
-                </button>
-              </div>
+              <div id="admin-product-list" class="admin-list"></div>
+            </section>
+          </div>
+
+          <section class="panel panel-nested">
+            <div class="panel-head">
+              <h2>Order Tracking</h2>
             </div>
+            <div id="admin-order-list" class="admin-orders"></div>
+            <p class="status-text" id="admin-order-status"></p>
           </section>
-        </section>
 
-        <section class="view" id="view-detail">
-          <article class="detail-shell" id="detail-shell">
-            <img class="detail-image" id="detail-image" alt="" />
-            <div class="detail-body">
-              <div class="detail-headline">
-                <span class="detail-category" id="detail-category"></span>
-                <h2 id="detail-name"></h2>
-                <div class="detail-prices">
-                  <strong id="detail-price"></strong>
-                  <span id="detail-old-price"></span>
-                </div>
-              </div>
-              <div class="detail-meta-row">
-                <span>★ 4.9 rating</span>
-                <span id="detail-sold">8.2k sold</span>
-              </div>
-              <p class="detail-description" id="detail-description"></p>
-              <div class="detail-actions">
-                <button class="secondary-action" id="detail-wishlist">Wishlist</button>
-                <button class="primary-action" id="detail-add-cart">Cart ထဲထည့်မယ်</button>
-              </div>
+          <section class="panel panel-nested">
+            <div class="panel-head">
+              <h2>Telegram Bot</h2>
             </div>
-          </article>
-        </section>
-
-        <section class="view" id="view-categories">
-          <div class="page-card">
-            <div class="page-header">
-              <h2>Categories</h2>
-              <p>အမျိုးအစားအလိုက် ပစ္စည်းတွေ ရွေးကြည့်နိုင်ပါတယ်။</p>
+            <div class="feature-list">
+              <p id="telegram-admin-summary">Telegram bot config will appear here.</p>
+              <p id="telegram-webhook-url" class="muted"></p>
             </div>
-            <div id="categories-page-grid" class="page-grid categories-page-grid"></div>
-          </div>
-        </section>
-
-        <section class="view" id="view-trend">
-          <div class="page-card">
-            <div class="page-header">
-              <h2>Trend picks</h2>
-              <p>လူကြိုက်များတဲ့ လျှော့စျေးပစ္စည်းတွေကို စုထားပါတယ်။</p>
-            </div>
-            <div id="trend-grid" class="product-grid"></div>
-          </div>
-        </section>
-
-        <section class="view" id="view-cart">
-          <div class="page-card">
-            <div class="page-header">
-              <h2>Shopping Cart</h2>
-              <p>ရွေးထားတဲ့ ပစ္စည်းတွေကို ဒီနေရာမှာ စစ်ကြည့်နိုင်ပါတယ်။</p>
-            </div>
-            <div id="cart-list" class="stack-list"></div>
-            <div class="summary-card">
-              <div class="summary-row">
-                <span>Subtotal</span>
-                <strong id="cart-subtotal">¥0</strong>
-              </div>
-              <button class="primary-action" id="checkout-button">Checkout လုပ်မယ်</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="view" id="view-wishlist">
-          <div class="page-card">
-            <div class="page-header">
-              <h2>Wishlist</h2>
-              <p>နောက်မှပြန်ကြည့်ချင်တဲ့ ပစ္စည်းတွေကို သိမ်းထားနိုင်ပါတယ်။</p>
-            </div>
-            <div id="wishlist-list" class="stack-list"></div>
-          </div>
-        </section>
-
-        <section class="view" id="view-messages">
-          <div class="page-card">
-            <div class="page-header">
-              <h2>Messages</h2>
-              <p>Order update နဲ့ promotion messages တွေ ဒီနေရာမှာပြပါမယ်။</p>
-            </div>
-            <div class="stack-list">
-              <div id="messages-list"></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="view" id="view-profile">
-          <div class="page-card">
-            <div class="page-header">
-              <h2>My page</h2>
-              <p>Order status, saved items, နဲ့ member benefits တွေကို ဒီနေရာမှာ စုပေးထားပါတယ်။</p>
-            </div>
-            <div class="profile-grid">
-              <button class="profile-tile" id="profile-orders" type="button">
-                <strong>Orders</strong>
-                <span>Recent checkout history</span>
+            <div class="account-actions">
+              <button type="button" class="primary-button full-width" id="telegram-setup-button">
+                Set Telegram Webhook
               </button>
-              <button class="profile-tile" id="profile-coupons" type="button">
-                <strong>Coupons</strong>
-                <span>¥5000 member credit</span>
-              </button>
-              <button class="profile-tile" id="profile-address" type="button">
-                <strong>Address</strong>
-                <span>Tokyo delivery zone</span>
-              </button>
-              <button class="profile-tile" id="profile-support" type="button">
-                <strong>Support</strong>
-                <span>Message us anytime</span>
-              </button>
+              <a href="#" class="ghost-button full-width hidden" id="telegram-open-bot" target="_blank" rel="noreferrer">
+                Open Bot
+              </a>
             </div>
-          </div>
+            <p class="status-text" id="telegram-status"></p>
+          </section>
         </section>
       </main>
     </div>
-
-    <div class="sticky-buybar">
-      <button class="mini-icon" id="mini-wishlist" aria-label="Wishlist">♡</button>
-      <button class="mini-icon" id="mini-share" aria-label="Share">⇪</button>
-      <button class="buy-action" id="buy-action">9% off | Cart ထဲထည့်မယ်</button>
-    </div>
-
-    <nav class="bottom-nav" id="bottom-nav">
-      <button class="nav-item active" data-view="home">
-        <span>⌂</span>
-        <small>Home</small>
-      </button>
-      <button class="nav-item" data-view="categories">
-        <span>◫</span>
-        <small>Category</small>
-      </button>
-      <button class="nav-item" data-view="trend">
-        <span>↗</span>
-        <small>Trend</small>
-      </button>
-      <button class="nav-item" data-view="cart">
-        <span>🛒</span>
-        <small>Cart</small>
-      </button>
-      <button class="nav-item" data-view="profile">
-        <span>◎</span>
-        <small>Me</small>
-      </button>
-    </nav>
-
-    <template id="menu-card-template">
-      <article class="product-card">
-        <div class="product-image-wrap">
-          <img class="product-image" alt="" />
-          <span class="product-badge"></span>
-          <button class="product-cart" type="button" aria-label="Add to cart">🛒</button>
-        </div>
-        <div class="product-card-body">
-          <span class="product-category"></span>
-          <h3 class="product-name"></h3>
-          <div class="price-row">
-            <span class="product-price"></span>
-            <span class="product-old-price"></span>
-          </div>
-          <p class="product-description"></p>
-          <div class="product-meta">
-            <span class="product-rating">★ 4.9</span>
-            <span class="product-sold">6.9k+ sold</span>
-          </div>
-        </div>
-      </article>
-    </template>
-
-    <template id="stack-item-template">
-      <article class="stack-item">
-        <img class="stack-image" alt="" />
-        <div class="stack-body">
-          <strong class="stack-name"></strong>
-          <span class="stack-price"></span>
-          <p class="stack-copy"></p>
-        </div>
-        <button class="stack-action" type="button"></button>
-      </article>
-    </template>
 
     <script src="/static/app.js" defer></script>
   </body>
