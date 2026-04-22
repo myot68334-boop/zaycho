@@ -64,6 +64,9 @@ STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "").strip()
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://example.com").strip()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "").strip()
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").strip()
+OLLAMA_MARKETING_MODEL = os.getenv("OLLAMA_MARKETING_MODEL", "qwen2.5:7b").strip()
+OLLAMA_VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "qwen2.5vl:7b").strip()
 
 
 @asynccontextmanager
@@ -126,6 +129,10 @@ class AssistantRequest(BaseModel):
     prompt: str = Field(min_length=2, max_length=240)
 
 
+class MarketingCommandRequest(BaseModel):
+    prompt: str = Field(min_length=2, max_length=500)
+
+
 class TelegramWebhookRequest(BaseModel):
     update_id: int | None = None
     message: dict | None = None
@@ -136,6 +143,18 @@ class TelegramWebhookRequest(BaseModel):
 class TelegramTestMessageRequest(BaseModel):
     message: str = Field(min_length=2, max_length=400)
     chat_id: int | None = None
+
+
+class MarketingBriefRequest(BaseModel):
+    focus: str = Field(default="sales + content + retention", max_length=200)
+
+
+class CreativeReviewRequest(BaseModel):
+    image_url: str = Field(min_length=4, max_length=500)
+    prompt: str = Field(
+        default="Review this creative for a fashion and beauty ecommerce campaign in Myanmar. Focus on hook, clarity, CTA, trust, and conversion.",
+        max_length=500,
+    )
 
 
 class PaymentIntentRequest(BaseModel):
@@ -237,9 +256,12 @@ def assistant_reply(prompt: str) -> str:
 
 TELEGRAM_LAST_CHAT_KEY = "telegram_last_chat_id"
 TELEGRAM_COMMANDS = {
-    "/help": "Commands: /start, /help, /menu, /shop",
+    "/help": "Commands: /start, /help, /menu, /shop, /ideas, /copy, /plan",
     "/menu": "Browse featured categories and product picks.",
     "/shop": "Open the live ZayCho storefront.",
+    "/ideas": "Generate campaign/content ideas for the shop.",
+    "/copy": "Generate ad copy or sales copy in Burmese.",
+    "/plan": "Create a short campaign or content plan.",
 }
 TELEGRAM_STOP_WORDS = {
     "for",
@@ -303,6 +325,10 @@ def storefront_url() -> str:
     return "http://127.0.0.1:8080"
 
 
+def ollama_enabled() -> bool:
+    return bool(OLLAMA_BASE_URL)
+
+
 def telegram_api_request(method: str, payload: dict) -> dict:
     if not telegram_enabled():
         raise HTTPException(status_code=501, detail="Telegram bot is not configured on the server.")
@@ -318,6 +344,80 @@ def telegram_api_request(method: str, payload: dict) -> dict:
             return json.loads(response.read().decode("utf-8"))
     except Exception as error:
         raise HTTPException(status_code=502, detail=f"Telegram request failed: {error}") from error
+
+
+def ollama_generate_text(prompt: str, system: str, model: str | None = None) -> str:
+    if not ollama_enabled():
+        return ""
+
+    payload = {
+        "model": model or OLLAMA_MARKETING_MODEL,
+        "prompt": prompt,
+        "system": system,
+        "stream": False,
+    }
+    req = request.Request(
+        f"{OLLAMA_BASE_URL.rstrip('/')}/api/generate",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with request.urlopen(req, timeout=60) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            return (data.get("response") or "").strip()
+    except Exception:
+        return ""
+
+
+def resolve_image_bytes(image_url: str) -> tuple[bytes, str]:
+    if image_url.startswith("data:") and "," in image_url:
+        meta, encoded = image_url.split(",", 1)
+        mime_type = meta.split(";")[0].removeprefix("data:") or "image/png"
+        return base64.b64decode(encoded), mime_type
+
+    if image_url.startswith("/uploads/"):
+        local_path = UPLOADS_DIR / Path(image_url).name
+        return local_path.read_bytes(), "image/png"
+
+    if image_url.startswith(storefront_url()):
+        parsed = parse.urlparse(image_url)
+        if parsed.path.startswith("/uploads/"):
+            local_path = UPLOADS_DIR / Path(parsed.path).name
+            return local_path.read_bytes(), "image/png"
+
+    with request.urlopen(image_url, timeout=30) as response:
+        mime_type = response.headers.get_content_type() or "image/png"
+        return response.read(), mime_type
+
+
+def ollama_vision_review(image_url: str, prompt: str) -> str:
+    if not ollama_enabled():
+        return ""
+
+    try:
+        image_bytes, _mime_type = resolve_image_bytes(image_url)
+    except Exception:
+        return ""
+
+    payload = {
+        "model": OLLAMA_VISION_MODEL,
+        "prompt": prompt,
+        "images": [base64.b64encode(image_bytes).decode("utf-8")],
+        "stream": False,
+    }
+    req = request.Request(
+        f"{OLLAMA_BASE_URL.rstrip('/')}/api/generate",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with request.urlopen(req, timeout=90) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            return (data.get("response") or "").strip()
+    except Exception:
+        return ""
 
 
 def send_telegram_message(chat_id: int, text: str, reply_markup: dict | None = None) -> dict:
@@ -477,6 +577,152 @@ def menu_keyboard() -> dict:
     }
 
 
+def top_categories(limit: int = 4) -> list[str]:
+    counts: dict[str, int] = {}
+    for product in list_products():
+        counts[product["category"]] = counts.get(product["category"], 0) + 1
+    return [item[0] for item in sorted(counts.items(), key=lambda item: item[1], reverse=True)[:limit]]
+
+
+def top_products(limit: int = 5) -> list[dict]:
+    return sorted(list_products(), key=lambda item: (item["rating"], item["inventory"], -item["price"]), reverse=True)[:limit]
+
+
+def marketing_context_snapshot() -> str:
+    categories = ", ".join(top_categories())
+    highlights = "\n".join(
+        f"- {product['name']} ({product['category']}) | ¥{product['price']} | {product['badge']}"
+        for product in top_products()
+    )
+    return (
+        f"Storefront: {storefront_url()}\n"
+        f"Top categories: {categories}\n"
+        f"Highlighted products:\n{highlights}"
+    )
+
+
+def fallback_ideas_reply(prompt: str) -> str:
+    return (
+        "Digital marketing ideas လေး 3 ခုရွေးပေးထားပါတယ်ရှင်:\n\n"
+        "1. Hero product spotlight campaign\n"
+        "• Best-rated item တစ်ခုကို short-form reel + Telegram post + limited-time CTA နဲ့တင်ပါ\n\n"
+        "2. Category education content\n"
+        "• skincare/fashion category တစ်ခုရွေးပြီး problem-solution post 3 ခုဆက်တိုက်တင်ပါ\n\n"
+        "3. Conversion follow-up promo\n"
+        "• cart abandon or warm audience အတွက် 'why buy now' message + social proof + offer တစ်ခုထည့်ပါ\n\n"
+        f"Requested focus: {prompt.strip()}\n"
+        f"Shop link: {storefront_url()}"
+    )
+
+
+def fallback_copy_reply(prompt: str) -> str:
+    return (
+        "Burmese sales copy draft:\n\n"
+        "မိမိလိုချင်တဲ့ look နဲ့ budget ကိုက်တဲ့ item လေးတွေကို ZayCho မှာ အလွယ်တကူရွေးလို့ရပါတယ်ရှင်။ "
+        "Quality ကောင်းပြီး daily use အတွက်လည်းအဆင်ပြေတဲ့ pick တွေကို category အလိုက်စီပေးထားပါတယ်။ "
+        "အခုဝင်ကြည့်ပြီး ကိုက်မယ့် item လေးကိုရွေးလိုက်ပါနော်။\n\n"
+        f"Copy brief: {prompt.strip()}\n"
+        f"Shop link: {storefront_url()}"
+    )
+
+
+def fallback_plan_reply(prompt: str) -> str:
+    return (
+        "3-day mini marketing plan:\n\n"
+        "Day 1\n"
+        "• Hero product awareness post\n"
+        "• Telegram broadcast with shop link\n\n"
+        "Day 2\n"
+        "• Social proof / benefits carousel\n"
+        "• Story poll or Q&A\n\n"
+        "Day 3\n"
+        "• urgency CTA + featured picks\n"
+        "• retarget warm audience with concise ad copy\n\n"
+        f"Plan brief: {prompt.strip()}"
+    )
+
+
+def marketing_ideas_reply(prompt: str) -> str:
+    system = (
+        "You are a senior digital marketer for a Myanmar ecommerce brand. "
+        "Answer in natural Burmese with actionable campaign ideas. Keep it concise, sales-minded, and structured."
+    )
+    generated = ollama_generate_text(
+        f"Store context:\n{marketing_context_snapshot()}\n\nTask: Give 3 high-impact marketing ideas for this brief:\n{prompt}",
+        system,
+    )
+    return generated or fallback_ideas_reply(prompt)
+
+
+def marketing_copy_reply(prompt: str) -> str:
+    system = (
+        "You are a Burmese ecommerce copywriter. Write persuasive but natural Burmese sales copy. "
+        "Prioritize clarity, benefits, urgency, and CTA. Keep it concise and easy to post."
+    )
+    generated = ollama_generate_text(
+        f"Store context:\n{marketing_context_snapshot()}\n\nWrite ad/social copy for this brief:\n{prompt}",
+        system,
+    )
+    return generated or fallback_copy_reply(prompt)
+
+
+def marketing_plan_reply(prompt: str) -> str:
+    system = (
+        "You are a performance marketing strategist. Write a short practical plan in Burmese with channels, content angle, CTA, and KPIs."
+    )
+    generated = ollama_generate_text(
+        f"Store context:\n{marketing_context_snapshot()}\n\nCreate a short campaign/content plan for:\n{prompt}",
+        system,
+    )
+    return generated or fallback_plan_reply(prompt)
+
+
+def daily_marketing_brief(focus: str) -> str:
+    prompt = (
+        f"Prepare today's ZayCho marketing brief. Focus: {focus}.\n"
+        "Include:\n"
+        "1. today priority\n"
+        "2. 3 campaign ideas\n"
+        "3. 2 copy angles\n"
+        "4. 3 action items\n"
+        "5. products worth pushing today"
+    )
+    system = (
+        "You are a senior digital marketer preparing a daily brief for a Myanmar ecommerce team. "
+        "Write in concise Burmese with clear sections and practical actions."
+    )
+    generated = ollama_generate_text(f"Store context:\n{marketing_context_snapshot()}\n\n{prompt}", system)
+    return generated or (
+        "Today's marketing brief\n\n"
+        f"Focus: {focus}\n\n"
+        "Priority\n• Push 1 hero product with a clear offer and CTA\n\n"
+        "Campaign ideas\n"
+        "1. Best-seller spotlight post\n"
+        "2. Category education reel\n"
+        "3. Telegram conversion reminder\n\n"
+        "Copy angles\n"
+        "• budget-friendly + quality\n"
+        "• easy daily styling / skin routine result\n\n"
+        "Action items\n"
+        "• Post 1 short-form video\n"
+        "• Send 1 Telegram message\n"
+        "• Refresh homepage featured picks"
+    )
+
+
+def fallback_creative_review(image_url: str, prompt: str) -> str:
+    return (
+        "Creative review summary\n\n"
+        "• Hook: first 2 seconds / first headline ကို ပိုရှင်းစေပါ\n"
+        "• Product clarity: item ကို closer crop နဲ့ပြပါ\n"
+        "• CTA: 'Shop now', 'See details', 'Limited offer' လို direct CTA ထည့်ပါ\n"
+        "• Trust: price, rating, social proof တစ်ခုခုထည့်ပါ\n"
+        "• Layout: text 20% လောက်နဲ့ benefit 1-2 ခုကိုပဲဖော်ပြပါ\n\n"
+        f"Review brief: {prompt}\n"
+        f"Image source: {image_url}"
+    )
+
+
 def menu_command_reply() -> str:
     featured_by_category: dict[str, dict] = {}
     for product in list_products():
@@ -504,6 +750,9 @@ def help_command_reply() -> str:
         "/menu - category menu + featured picks\n"
         "/shop - storefront link\n"
         "/help - အသုံးပြုပုံပြန်ကြည့်ရန်\n\n"
+        "/ideas - campaign/content ideas ယူရန်\n"
+        "/copy - sales copy draft ယူရန်\n"
+        "/plan - short campaign plan ယူရန်\n\n"
         "မေးခွန်းပုံစံ ဥပမာများ:\n"
         "• oily skin အတွက် skincare under 5000 yen\n"
         "• black office outfit under 8000 yen\n"
@@ -586,6 +835,7 @@ def telegram_reply_from_callback(data: str) -> dict:
 def build_telegram_reply(prompt: str) -> dict:
     text = prompt.strip()
     command = text.split()[0].lower() if text.startswith("/") else ""
+    argument = text[len(command) :].strip() if command else text
     if command == "/start":
         return telegram_response_payload(
             (
@@ -605,6 +855,15 @@ def build_telegram_reply(prompt: str) -> dict:
             shop_command_reply(),
             {"inline_keyboard": [[{"text": "🛍 Open ZayCho Shop", "url": storefront_url()}]]},
         )
+    if command == "/ideas":
+        brief = argument or "Create 3 ecommerce campaign ideas for this week."
+        return telegram_response_payload(marketing_ideas_reply(brief), menu_keyboard())
+    if command == "/copy":
+        brief = argument or "Write a short Burmese sales copy for today's hero product."
+        return telegram_response_payload(marketing_copy_reply(brief), menu_keyboard())
+    if command == "/plan":
+        brief = argument or "Prepare a short 3-day campaign plan for ZayCho."
+        return telegram_response_payload(marketing_plan_reply(brief), menu_keyboard())
     return telegram_response_payload(product_recommendation_reply(text), menu_keyboard())
 
 
@@ -772,6 +1031,58 @@ async def create_payment_intent(
 @app.post("/api/assistant")
 async def assistant(payload: AssistantRequest) -> dict:
     return {"reply": product_recommendation_reply(payload.prompt)}
+
+
+@app.post("/api/marketing/ideas")
+async def marketing_ideas(payload: MarketingCommandRequest) -> dict:
+    return {"reply": marketing_ideas_reply(payload.prompt)}
+
+
+@app.post("/api/marketing/copy")
+async def marketing_copy(payload: MarketingCommandRequest) -> dict:
+    return {"reply": marketing_copy_reply(payload.prompt)}
+
+
+@app.post("/api/marketing/plan")
+async def marketing_plan(payload: MarketingCommandRequest) -> dict:
+    return {"reply": marketing_plan_reply(payload.prompt)}
+
+
+@app.post("/api/admin/marketing/brief")
+async def admin_marketing_brief(
+    payload: MarketingBriefRequest,
+    _: Annotated[dict, Depends(admin_user)],
+) -> dict:
+    return {"brief": daily_marketing_brief(payload.focus)}
+
+
+@app.post("/api/admin/marketing/brief/telegram")
+async def admin_send_marketing_brief(
+    payload: MarketingBriefRequest,
+    _: Annotated[dict, Depends(admin_user)],
+) -> dict:
+    if not telegram_enabled():
+        raise HTTPException(status_code=501, detail="Telegram bot is not configured on the server.")
+
+    stored_chat_id = get_app_setting(TELEGRAM_LAST_CHAT_KEY, "")
+    if not stored_chat_id:
+        raise HTTPException(status_code=400, detail="No recent Telegram chat found yet. Message the bot once, then try again.")
+
+    brief = daily_marketing_brief(payload.focus)
+    telegram_response = send_telegram_message(int(stored_chat_id), brief, menu_keyboard())
+    return {"ok": telegram_response.get("ok", False), "brief": brief, "chat_id": stored_chat_id}
+
+
+@app.post("/api/admin/marketing/review")
+async def admin_creative_review(
+    payload: CreativeReviewRequest,
+    _: Annotated[dict, Depends(admin_user)],
+) -> dict:
+    review = ollama_vision_review(payload.image_url, payload.prompt) or fallback_creative_review(
+        payload.image_url,
+        payload.prompt,
+    )
+    return {"review": review}
 
 
 @app.get("/api/telegram/config")

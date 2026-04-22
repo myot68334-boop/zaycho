@@ -49,6 +49,16 @@ const telegramStatus = document.getElementById("telegram-status");
 const telegramOpenBot = document.getElementById("telegram-open-bot");
 const telegramTestMessage = document.getElementById("telegram-test-message");
 const telegramTestButton = document.getElementById("telegram-test-button");
+const marketingBriefFocus = document.getElementById("marketing-brief-focus");
+const marketingBriefGenerate = document.getElementById("marketing-brief-generate");
+const marketingBriefSend = document.getElementById("marketing-brief-send");
+const marketingBriefOutput = document.getElementById("marketing-brief-output");
+const marketingBriefStatus = document.getElementById("marketing-brief-status");
+const creativeReviewImage = document.getElementById("creative-review-image");
+const creativeReviewPrompt = document.getElementById("creative-review-prompt");
+const creativeReviewRun = document.getElementById("creative-review-run");
+const creativeReviewOutput = document.getElementById("creative-review-output");
+const creativeReviewStatus = document.getElementById("creative-review-status");
 
 const productForm = document.getElementById("product-form");
 const productStatus = document.getElementById("product-status");
@@ -171,6 +181,9 @@ function updateAuthUi() {
   adminPanel.classList.toggle("hidden", state.user?.role !== "admin");
   telegramSetupButton.disabled = state.user?.role !== "admin";
   telegramTestButton.disabled = state.user?.role !== "admin";
+  marketingBriefGenerate.disabled = state.user?.role !== "admin";
+  marketingBriefSend.disabled = state.user?.role !== "admin";
+  creativeReviewRun.disabled = state.user?.role !== "admin";
 }
 
 function renderCategories() {
@@ -448,6 +461,11 @@ function renderTelegramConfig() {
     telegramOpenBot.classList.add("hidden");
     telegramOpenBot.href = "#";
   }
+
+  marketingBriefFocus.value = marketingBriefFocus.value || "sales + content + retention";
+  creativeReviewPrompt.value =
+    creativeReviewPrompt.value ||
+    "Review this creative for hook, clarity, CTA, trust, and conversion for a fashion and beauty ecommerce campaign.";
 }
 
 async function loadProducts() {
@@ -890,6 +908,62 @@ telegramTestButton.addEventListener("click", async () => {
     telegramTestMessage.value = "";
   } catch (error) {
     telegramStatus.textContent = error.message;
+  }
+});
+
+marketingBriefGenerate.addEventListener("click", async () => {
+  const focus = marketingBriefFocus.value.trim() || "sales + content + retention";
+  marketingBriefStatus.textContent = "Generating daily marketing brief...";
+  try {
+    const data = await api("/api/admin/marketing/brief", {
+      method: "POST",
+      body: JSON.stringify({ focus }),
+    });
+    marketingBriefOutput.value = data.brief || "";
+    marketingBriefStatus.textContent = "Daily marketing brief is ready.";
+  } catch (error) {
+    marketingBriefStatus.textContent = error.message;
+  }
+});
+
+marketingBriefSend.addEventListener("click", async () => {
+  const focus = marketingBriefFocus.value.trim() || "sales + content + retention";
+  marketingBriefStatus.textContent = "Sending daily brief to Telegram...";
+  try {
+    const data = await api("/api/admin/marketing/brief/telegram", {
+      method: "POST",
+      body: JSON.stringify({ focus }),
+    });
+    marketingBriefOutput.value = data.brief || marketingBriefOutput.value;
+    marketingBriefStatus.textContent = data.ok
+      ? `Marketing brief sent to Telegram chat ${data.chat_id}.`
+      : "Telegram accepted the request, but did not confirm success.";
+  } catch (error) {
+    marketingBriefStatus.textContent = error.message;
+  }
+});
+
+creativeReviewRun.addEventListener("click", async () => {
+  const imageUrl = creativeReviewImage.value.trim();
+  const prompt =
+    creativeReviewPrompt.value.trim() ||
+    "Review this creative for hook, clarity, CTA, trust, and conversion.";
+
+  if (!imageUrl) {
+    creativeReviewStatus.textContent = "Add an image URL or uploaded image path first.";
+    return;
+  }
+
+  creativeReviewStatus.textContent = "Reviewing creative...";
+  try {
+    const data = await api("/api/admin/marketing/review", {
+      method: "POST",
+      body: JSON.stringify({ image_url: imageUrl, prompt }),
+    });
+    creativeReviewOutput.value = data.review || "";
+    creativeReviewStatus.textContent = "Creative review completed.";
+  } catch (error) {
+    creativeReviewStatus.textContent = error.message;
   }
 });
 

@@ -285,6 +285,60 @@
             </div>
             <p class="status-text" id="telegram-status"></p>
           </section>
+
+          <section class="panel panel-nested">
+            <div class="panel-head">
+              <h2>Daily Marketing Brief</h2>
+            </div>
+            <div class="stack-form">
+              <input
+                id="marketing-brief-focus"
+                type="text"
+                placeholder="Focus: sales + content + retention"
+              />
+              <div class="account-actions">
+                <button type="button" class="ghost-button full-width" id="marketing-brief-generate">
+                  Generate Brief
+                </button>
+                <button type="button" class="primary-button full-width" id="marketing-brief-send">
+                  Send Brief to Telegram
+                </button>
+              </div>
+              <textarea
+                id="marketing-brief-output"
+                placeholder="Today's marketing brief will appear here..."
+                rows="8"
+              ></textarea>
+            </div>
+            <p class="status-text" id="marketing-brief-status"></p>
+          </section>
+
+          <section class="panel panel-nested">
+            <div class="panel-head">
+              <h2>Creative Review</h2>
+            </div>
+            <div class="stack-form">
+              <input
+                id="creative-review-image"
+                type="text"
+                placeholder="Image URL or /uploads/... path"
+              />
+              <textarea
+                id="creative-review-prompt"
+                rows="4"
+                placeholder="Review this creative for hook, clarity, CTA, trust, and conversion."
+              ></textarea>
+              <button type="button" class="primary-button full-width" id="creative-review-run">
+                Review Creative
+              </button>
+              <textarea
+                id="creative-review-output"
+                rows="8"
+                placeholder="Creative review result will appear here..."
+              ></textarea>
+            </div>
+            <p class="status-text" id="creative-review-status"></p>
+          </section>
         </section>
       </main>
     </div>
