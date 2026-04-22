@@ -130,6 +130,7 @@ class TelegramWebhookRequest(BaseModel):
     update_id: int | None = None
     message: dict | None = None
     edited_message: dict | None = None
+    callback_query: dict | None = None
 
 
 class TelegramTestMessageRequest(BaseModel):
@@ -263,6 +264,37 @@ TELEGRAM_STOP_WORDS = {
     "suggestion",
     "looking",
 }
+TELEGRAM_CATEGORY_HINTS = {
+    "Skincare": {"skincare", "serum", "cleanser", "cream", "skin", "oily", "dry", "acne"},
+    "Makeup": {"makeup", "lip", "lips", "lipstick", "lip tint", "cushion", "blush", "cosmetic"},
+    "Tops": {"top", "tops", "shirt", "overshirt", "blouse", "tee"},
+    "Bottoms": {"bottom", "bottoms", "pants", "trouser", "trousers", "skirt", "jeans"},
+    "Sets": {"set", "sets", "outfit", "matching", "coord", "co-ord"},
+    "Accessories": {"accessory", "accessories", "bag", "tote", "hijab", "scarf"},
+}
+TELEGRAM_STYLE_HINTS = {
+    "casual": {"casual", "daily", "everyday", "simple", "relaxed"},
+    "office": {"office", "work", "smart", "formal", "clean"},
+    "feminine": {"cute", "feminine", "soft", "date", "pretty"},
+    "street": {"street", "cargo", "edgy", "cool", "oversized"},
+    "modest": {"modest", "covered", "hijab", "layered"},
+    "gift": {"gift", "present", "surprise"},
+}
+TELEGRAM_SKIN_HINTS = {
+    "oily": {"oily", "oil", "greasy"},
+    "dry": {"dry", "dehydrated", "flaky"},
+    "sensitive": {"sensitive", "redness", "gentle"},
+    "acne": {"acne", "pimple", "breakout"},
+    "glow": {"glow", "bright", "dewy"},
+}
+TELEGRAM_COLOR_HINTS = {
+    "black": {"black"},
+    "white": {"white", "ivory", "cream"},
+    "pink": {"pink", "rose", "petal"},
+    "brown": {"brown", "mocha", "taupe", "khaki"},
+    "blue": {"blue", "navy"},
+    "green": {"green", "sage", "olive", "matcha"},
+}
 
 
 def storefront_url() -> str:
@@ -288,15 +320,15 @@ def telegram_api_request(method: str, payload: dict) -> dict:
         raise HTTPException(status_code=502, detail=f"Telegram request failed: {error}") from error
 
 
-def send_telegram_message(chat_id: int, text: str) -> dict:
-    return telegram_api_request(
-        "sendMessage",
-        {
-            "chat_id": chat_id,
-            "text": text,
-            "disable_web_page_preview": False,
-        },
-    )
+def send_telegram_message(chat_id: int, text: str, reply_markup: dict | None = None) -> dict:
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "disable_web_page_preview": False,
+    }
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    return telegram_api_request("sendMessage", payload)
 
 
 def extract_budget(prompt: str) -> int | None:
@@ -323,7 +355,26 @@ def query_tokens(prompt: str) -> list[str]:
     ]
 
 
-def product_match_score(product: dict, prompt: str, budget: int | None) -> int:
+def detect_from_map(prompt: str, mapping: dict[str, set[str]]) -> str | None:
+    lowered = prompt.lower()
+    for label, keywords in mapping.items():
+        if any(keyword in lowered for keyword in keywords):
+            return label
+    return None
+
+
+def parse_shopping_intent(prompt: str) -> dict:
+    return {
+        "budget": extract_budget(prompt),
+        "category": detect_from_map(prompt, TELEGRAM_CATEGORY_HINTS),
+        "style": detect_from_map(prompt, TELEGRAM_STYLE_HINTS),
+        "skin_concern": detect_from_map(prompt, TELEGRAM_SKIN_HINTS),
+        "color": detect_from_map(prompt, TELEGRAM_COLOR_HINTS),
+        "tokens": query_tokens(prompt),
+    }
+
+
+def product_match_score(product: dict, prompt: str, intent: dict) -> int:
     haystack = " ".join(
         [
             product["name"],
@@ -335,21 +386,50 @@ def product_match_score(product: dict, prompt: str, budget: int | None) -> int:
         ]
     ).lower()
     score = 0
-    for token in query_tokens(prompt):
+    for token in intent["tokens"]:
         if token in haystack:
             score += 2
     lowered = prompt.lower()
     category = product["category"].lower()
+    budget = intent["budget"]
     if category in lowered:
         score += 4
+    if intent["category"] and product["category"].lower() == intent["category"].lower():
+        score += 7
     if budget is not None and product["price"] <= budget:
         score += 3
+    if budget is not None and product["price"] > budget:
+        score -= 2
     if "skincare" in lowered and category == "skincare":
         score += 4
     if "makeup" in lowered and category == "makeup":
         score += 4
     if any(word in lowered for word in ["outfit", "fashion", "shirt", "pants", "dress"]) and category in {"tops", "bottoms", "sets"}:
         score += 4
+    if intent["skin_concern"] and category == "skincare":
+        if intent["skin_concern"] in haystack:
+            score += 5
+        if intent["skin_concern"] == "oily" and any(word in haystack for word in ["oil", "clean", "foam", "balance"]):
+            score += 4
+        if intent["skin_concern"] == "dry" and any(word in haystack for word in ["hyaluronic", "cream", "rich", "repair", "dewy"]):
+            score += 4
+        if intent["skin_concern"] == "sensitive" and any(word in haystack for word in ["gentle", "calm", "soft"]):
+            score += 4
+    if intent["style"]:
+        if intent["style"] == "office" and any(word in haystack for word in ["satin", "polished", "linen", "structured"]):
+            score += 4
+        if intent["style"] == "casual" and any(word in haystack for word in ["casual", "daily", "everyday", "weekend"]):
+            score += 4
+        if intent["style"] == "feminine" and any(word in haystack for word in ["rose", "blush", "soft", "skirt"]):
+            score += 4
+        if intent["style"] == "street" and any(word in haystack for word in ["cargo", "graphite", "overshirt"]):
+            score += 4
+        if intent["style"] == "modest" and any(word in haystack for word in ["hijab", "overshirt", "layering", "drape"]):
+            score += 4
+        if intent["style"] == "gift" and any(word in haystack for word in ["gift", "popular", "editor", "best seller"]):
+            score += 4
+    if intent["color"] and intent["color"] in haystack:
+        score += 3
     return score
 
 
@@ -359,9 +439,9 @@ def format_product_line(product: dict) -> str:
 
 def recommended_products(prompt: str, limit: int = 3) -> list[dict]:
     products = list_products()
-    budget = extract_budget(prompt)
+    intent = parse_shopping_intent(prompt)
     scored = [
-        (product_match_score(product, prompt, budget), product)
+        (product_match_score(product, prompt, intent), product)
         for product in products
     ]
     scored = [item for item in scored if item[0] > 0]
@@ -369,70 +449,163 @@ def recommended_products(prompt: str, limit: int = 3) -> list[dict]:
     return [product for _, product in scored[:limit]]
 
 
+def category_shop_url(category: str) -> str:
+    params = parse.urlencode({"category": category})
+    return f"{storefront_url()}/?{params}#catalog"
+
+
+def menu_keyboard() -> dict:
+    return {
+        "inline_keyboard": [
+            [
+                {"text": "🧴 Skincare", "callback_data": "category:Skincare"},
+                {"text": "💄 Makeup", "callback_data": "category:Makeup"},
+            ],
+            [
+                {"text": "👚 Tops", "callback_data": "category:Tops"},
+                {"text": "👖 Bottoms", "callback_data": "category:Bottoms"},
+            ],
+            [
+                {"text": "✨ Sets", "callback_data": "category:Sets"},
+                {"text": "👜 Accessories", "callback_data": "category:Accessories"},
+            ],
+            [
+                {"text": "🛍 Shop Now", "url": storefront_url()},
+                {"text": "🧭 Help", "callback_data": "command:/help"},
+            ],
+        ]
+    }
+
+
 def menu_command_reply() -> str:
-    categories = ", ".join(list_categories())
-    featured = list_products()[:4]
-    lines = "\n".join(format_product_line(product) for product in featured)
+    featured_by_category: dict[str, dict] = {}
+    for product in list_products():
+        featured_by_category.setdefault(product["category"], product)
+
+    lines = []
+    for category in list_categories():
+        product = featured_by_category.get(category)
+        if not product:
+            continue
+        lines.append(f"• {category}: {product['name']} - ¥{product['price']}")
+
     return (
-        "ZayCho menu overview\n\n"
-        f"Categories: {categories}\n\n"
-        "Featured picks:\n"
-        f"{lines}\n\n"
-        f"Shop: {storefront_url()}"
+        "မင်္ဂလာပါရှင်၊ ZayCho menu လေးကို category အလိုက် ကြည့်လို့ရပါပြီ။\n\n"
+        "လက်ရှိ popular picks:\n"
+        f"{chr(10).join(lines)}\n\n"
+        "အောက်က button တွေထဲက category ကိုနှိပ်ပြီး ပိုတိကျတဲ့ recommendation ဆက်ယူနိုင်ပါတယ်။"
     )
 
 
 def help_command_reply() -> str:
     return (
-        "ZayCho bot commands\n\n"
-        "/start - welcome message\n"
-        "/menu - featured categories and products\n"
-        "/shop - open storefront link\n"
-        "/help - show this help\n\n"
-        "You can also send prompts like:\n"
-        "• skincare for oily skin under 5000 yen\n"
-        "• black outfit under 8000 yen"
+        "ZayCho shopping assistant ကို ဒီလိုအသုံးပြုနိုင်ပါတယ်ရှင်\n\n"
+        "/start - bot မိတ်ဆက်နဲ့ shop link\n"
+        "/menu - category menu + featured picks\n"
+        "/shop - storefront link\n"
+        "/help - အသုံးပြုပုံပြန်ကြည့်ရန်\n\n"
+        "မေးခွန်းပုံစံ ဥပမာများ:\n"
+        "• oily skin အတွက် skincare under 5000 yen\n"
+        "• black office outfit under 8000 yen\n"
+        "• gift idea for teenage girl\n\n"
+        "budget + category + style + skin concern ထည့်လေလေ recommendation ပိုတိကျလေလေပါ။"
     )
 
 
 def shop_command_reply() -> str:
-    return f"Shop link: {storefront_url()}"
+    return f"ZayCho shop ကို ဒီ link ကနေ တန်းဝင်လို့ရပါတယ်ရှင်:\n{storefront_url()}"
+
+
+def telegram_response_payload(text: str, reply_markup: dict | None = None) -> dict:
+    return {"text": text, "reply_markup": reply_markup}
 
 
 def product_recommendation_reply(prompt: str) -> str:
+    intent = parse_shopping_intent(prompt)
     picks = recommended_products(prompt)
     if not picks:
         return (
             f"{assistant_reply(prompt)}\n\n"
-            "ပိုတိကျအောင် category, budget, style, skin concern ကို ထည့်ပေးပါ။\n"
-            f"Shop: {storefront_url()}"
+            "ပိုတိကျတဲ့ item လိုချင်ရင် category, budget, style, skin concern ကို ထပ်ပြောပေးပါရှင်။\n"
+            f"Shop link: {storefront_url()}"
         )
 
-    budget = extract_budget(prompt)
-    intro = "အောက်က item တွေကို စမ်းကြည့်ပါ:"
+    budget = intent["budget"]
+    detail_bits = []
+    if intent["category"]:
+        detail_bits.append(intent["category"])
+    if intent["style"]:
+        detail_bits.append(intent["style"])
+    if intent["skin_concern"]:
+        detail_bits.append(intent["skin_concern"])
+    if intent["color"]:
+        detail_bits.append(intent["color"])
+
+    intro = "ကြည့်လိုက်တော့ ကိုက်မယ့် item လေးတွေ ရွေးပေးထားပါတယ်ရှင်:"
     if budget is not None:
-        intro = f"Budget ¥{budget} အောက်နဲ့ကိုက်မယ့် item တွေကို ရွေးထားပါတယ်:"
-    lines = "\n".join(format_product_line(product) for product in picks)
-    return f"{intro}\n\n{lines}\n\nပိုတိကျချင်ရင် color/style/skin concern ကို ထပ်ပြောပါ။\nShop: {storefront_url()}"
+        intro = f"Budget ¥{budget} အတွင်းနဲ့ ကိုက်မယ့် item လေးတွေ ရွေးပေးထားပါတယ်ရှင်:"
+    if detail_bits:
+        intro = f"{', '.join(detail_bits)} အတွက် ကိုက်မယ့် item လေးတွေ ရွေးပေးထားပါတယ်ရှင်:"
+
+    lines = []
+    for product in picks:
+        descriptor = f"{product['display_emoji']} {product['name']} - ¥{product['price']}"
+        benefit = product["description"]
+        lines.append(f"{descriptor}\n  {benefit}")
+
+    return (
+        f"{intro}\n\n"
+        f"{chr(10).join(lines)}\n\n"
+        "ပိုတိကျချင်ရင် budget, color, style, skin concern ကို ထပ်ပြောပေးပါရှင်။\n"
+        f"Shop link: {storefront_url()}"
+    )
 
 
-def build_telegram_reply(prompt: str) -> str:
+def telegram_reply_from_callback(data: str) -> dict:
+    if data.startswith("category:"):
+        category = data.split(":", 1)[1]
+        text = product_recommendation_reply(f"show {category} recommendations")
+        buttons = {
+            "inline_keyboard": [
+                [
+                    {"text": f"🛍 Open {category}", "url": category_shop_url(category)},
+                    {"text": "↩️ Back to Menu", "callback_data": "command:/menu"},
+                ]
+            ]
+        }
+        return telegram_response_payload(text, buttons)
+    if data == "command:/help":
+        return telegram_response_payload(help_command_reply(), menu_keyboard())
+    if data == "command:/menu":
+        return telegram_response_payload(menu_command_reply(), menu_keyboard())
+    if data == "command:/shop":
+        return telegram_response_payload(shop_command_reply(), {"inline_keyboard": [[{"text": "🛍 Open Storefront", "url": storefront_url()}]]})
+    return telegram_response_payload("လိုချင်တဲ့ category ကို ထပ်ရွေးပြီး စမ်းကြည့်ပေးပါရှင်။", menu_keyboard())
+
+
+def build_telegram_reply(prompt: str) -> dict:
     text = prompt.strip()
     command = text.split()[0].lower() if text.startswith("/") else ""
     if command == "/start":
-        return (
-            "မင်္ဂလာပါ၊ ZayCho Telegram bot မှ ကြိုဆိုပါတယ်။\n\n"
-            "Fashion, skincare, makeup recommendation တွေကို category, budget, style, skin concern နဲ့မေးလို့ရပါတယ်။\n"
-            "Commands: /help, /menu, /shop\n"
-            f"Shop link: {storefront_url()}"
+        return telegram_response_payload(
+            (
+                "မင်္ဂလာပါရှင်၊ ZayCho shopping assistant မှ ကြိုဆိုပါတယ်။\n\n"
+                "Fashion, skincare, makeup item recommendation တွေကို budget, category, style, skin concern နဲ့မေးလို့ရပါတယ်။\n"
+                "ဥပမာ - black office outfit under 8000 yen\n\n"
+                f"Shop link: {storefront_url()}"
+            ),
+            menu_keyboard(),
         )
     if command == "/help":
-        return help_command_reply()
+        return telegram_response_payload(help_command_reply(), menu_keyboard())
     if command == "/menu":
-        return menu_command_reply()
+        return telegram_response_payload(menu_command_reply(), menu_keyboard())
     if command == "/shop":
-        return shop_command_reply()
-    return product_recommendation_reply(text)
+        return telegram_response_payload(
+            shop_command_reply(),
+            {"inline_keyboard": [[{"text": "🛍 Open ZayCho Shop", "url": storefront_url()}]]},
+        )
+    return telegram_response_payload(product_recommendation_reply(text), menu_keyboard())
 
 
 def compute_amount(items: list[OrderItemRequest]) -> int:
@@ -646,7 +819,7 @@ async def telegram_test_message(
             raise HTTPException(status_code=400, detail="No recent Telegram chat found yet. Message the bot once, then try again.")
         chat_id = int(stored_chat_id)
 
-    telegram_response = send_telegram_message(chat_id, payload.message.strip())
+    telegram_response = send_telegram_message(chat_id, payload.message.strip(), menu_keyboard())
     return {"ok": telegram_response.get("ok", False), "chat_id": chat_id}
 
 
@@ -657,6 +830,26 @@ async def telegram_webhook(token: str, payload: TelegramWebhookRequest) -> dict:
     if token != TELEGRAM_BOT_TOKEN:
         raise HTTPException(status_code=403, detail="Invalid Telegram webhook token.")
 
+    if payload.callback_query:
+        callback = payload.callback_query
+        callback_id = callback.get("id")
+        data = (callback.get("data") or "").strip()
+        chat = ((callback.get("message") or {}).get("chat") or {})
+        chat_id = chat.get("id")
+        if callback_id:
+            telegram_api_request("answerCallbackQuery", {"callback_query_id": callback_id})
+        if not chat_id or not data:
+            return {"ok": True, "ignored": True}
+
+        set_app_setting(TELEGRAM_LAST_CHAT_KEY, str(chat_id))
+        reply_payload = telegram_reply_from_callback(data)
+        telegram_response = send_telegram_message(
+            chat_id,
+            reply_payload["text"],
+            reply_payload.get("reply_markup"),
+        )
+        return {"ok": telegram_response.get("ok", False), "reply": reply_payload["text"], "callback": data}
+
     message = payload.message or payload.edited_message or {}
     chat = message.get("chat") or {}
     chat_id = chat.get("id")
@@ -666,9 +859,13 @@ async def telegram_webhook(token: str, payload: TelegramWebhookRequest) -> dict:
         return {"ok": True, "ignored": True}
 
     set_app_setting(TELEGRAM_LAST_CHAT_KEY, str(chat_id))
-    reply = build_telegram_reply(text)
-    telegram_response = send_telegram_message(chat_id, reply)
-    return {"ok": telegram_response.get("ok", False), "reply": reply}
+    reply_payload = build_telegram_reply(text)
+    telegram_response = send_telegram_message(
+        chat_id,
+        reply_payload["text"],
+        reply_payload.get("reply_markup"),
+    )
+    return {"ok": telegram_response.get("ok", False), "reply": reply_payload["text"]}
 
 
 @app.get("/api/admin/stats")
